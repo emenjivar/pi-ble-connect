@@ -77,6 +77,7 @@ fun DetailScreen(
         onUpdateLedState = viewModel::updateLedState,
         onConnectDevice = viewModel::connect,
         onConnectToWifi = viewModel::scanWifiNetworks,
+        connectToWifiNetwork  = viewModel::connectToWifiNetwork,
         onDisconnectDevice = viewModel::disconnect,
         onNavigateBack = onNavigateBack
     )
@@ -89,6 +90,7 @@ fun DetailScreen(
     onUpdateLedState: (LEDCommand) -> Unit,
     onConnectDevice: () -> Unit,
     onConnectToWifi: () -> Unit,
+    connectToWifiNetwork: (WifiNetworkCredentials) -> Unit,
     onDisconnectDevice: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
@@ -254,6 +256,7 @@ fun DetailScreen(
                 modifier = Modifier.statusBarsPadding(),
                 sheetState = sheetState,
                 wifiScanResult = uiState.wifiScanResult,
+                onConnectNetwork = connectToWifiNetwork,
                 onDismissRequest = {
                     coroutineScope.launch {
                         sheetState.hide()
@@ -274,6 +277,7 @@ private fun DetailScreenPreview() {
             onUpdateLedState = {},
             onConnectDevice = {},
             onConnectToWifi = {},
+            connectToWifiNetwork = {},
             onDisconnectDevice = {},
             onNavigateBack = {}
         )

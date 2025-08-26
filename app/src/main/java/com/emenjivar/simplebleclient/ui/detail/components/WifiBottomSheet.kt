@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.emenjivar.simplebleclient.R
 import com.emenjivar.simplebleclient.ui.components.PrimaryButton
+import com.emenjivar.simplebleclient.ui.detail.WifiNetworkCredentials
 import com.emenjivar.simplebleclient.ui.theme.SimpleBLEClientTheme
 import com.emenjivar.simplebleclient.wifi.StateResult
 import com.emenjivar.simplebleclient.wifi.WifiNetwork
@@ -66,6 +67,7 @@ fun WifiBottomSheet(
     wifiScanResult: StateResult<List<WifiNetwork>>,
     modifier: Modifier = Modifier,
     sheetState: SheetState = rememberModalBottomSheetState(),
+    onConnectNetwork: (WifiNetworkCredentials) -> Unit,
     onDismissRequest: () -> Unit
 ) {
     val blockDismiss = remember {
@@ -89,6 +91,7 @@ fun WifiBottomSheet(
                 .fillMaxWidth()
                 .nestedScroll(blockDismiss),
             wifiScanResult = wifiScanResult,
+            onConnectNetworkClick = onConnectNetwork,
             onDismissRequest = onDismissRequest
         )
     }
@@ -100,6 +103,7 @@ fun WifiBottomSheet(
 fun WifiBottomSheetLayout(
     wifiScanResult: StateResult<List<WifiNetwork>>,
     modifier: Modifier = Modifier,
+    onConnectNetworkClick: (WifiNetworkCredentials) -> Unit,
     onDismissRequest: () -> Unit
 ) {
     val pagerState = rememberPagerState { 2 }
@@ -142,7 +146,14 @@ fun WifiBottomSheetLayout(
                             selectedWifi = null
                         }
                     },
-                    onConnectClick = {}
+                    onConnectClick = { password ->
+                        onConnectNetworkClick(
+                            WifiNetworkCredentials(
+                                ssid = selectedWifi?.ssid.orEmpty(),
+                                password = password
+                            )
+                        )
+                    }
                 )
             }
         }
@@ -240,7 +251,7 @@ private fun SelectWifiLayout(
 private fun EnterWifiPasswordLayout(
     ssid: String,
     modifier: Modifier = Modifier,
-    onConnectClick: () -> Unit,
+    onConnectClick: (password: String) -> Unit,
     onBackClick: () -> Unit
 ) {
     var showPassword by remember { mutableStateOf(false) }
@@ -328,7 +339,9 @@ private fun EnterWifiPasswordLayout(
                 modifier = Modifier.fillMaxWidth(),
                 text = "Connect",
                 icon = R.drawable.ic_wifi,
-                onClick = onConnectClick
+                onClick = {
+                    onConnectClick(passwordState.text.toString())
+                }
             )
         }
     }
@@ -424,6 +437,7 @@ private fun WifiBottomSheetLoadingPreview() {
     SimpleBLEClientTheme {
         WifiBottomSheetLayout(
             wifiScanResult = StateResult.Loading,
+            onConnectNetworkClick = {},
             onDismissRequest = {}
         )
     }
@@ -442,6 +456,7 @@ private fun WifiBottomSheetPreview() {
                     WifiNetwork(ssid = "Coffee shop free", rssi = -10),
                 )
             ),
+            onConnectNetworkClick = {},
             onDismissRequest = {}
         )
     }

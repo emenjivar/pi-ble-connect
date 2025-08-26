@@ -6,6 +6,9 @@ val primaryServiceUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4
 val ledCharacteristicUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df21")
 val getIPCharacteristicUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df22")
 val getSSIDCharacteristicUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df23")
+val writeSSIDCharacteristicUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df24")
+val writeNetworkPasswordUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df25")
+val writeConnectWifiUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df26")
 
 // Used for listening notification changes
 val clientCharacteristicConfigUUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")

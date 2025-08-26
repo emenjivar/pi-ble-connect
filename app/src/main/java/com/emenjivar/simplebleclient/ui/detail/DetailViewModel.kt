@@ -16,7 +16,10 @@ import com.emenjivar.simplebleclient.ble.commands.GetIPAddress
 import com.emenjivar.simplebleclient.ble.commands.GetSSID
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
 import com.emenjivar.simplebleclient.ble.commands.ReadLedStatus
+import com.emenjivar.simplebleclient.ble.commands.WriteConnectWifi
 import com.emenjivar.simplebleclient.ble.commands.WriteLedStatus
+import com.emenjivar.simplebleclient.ble.commands.WriteNetworkPassword
+import com.emenjivar.simplebleclient.ble.commands.WriteSSID
 import com.emenjivar.simplebleclient.wifi.StateResult
 import com.emenjivar.simplebleclient.wifi.WifiNetwork
 import dagger.assisted.Assisted
@@ -91,6 +94,12 @@ class DetailViewModel @AssistedInject constructor(
 
     fun updateLedState(state: LEDCommand) {
         customBluetoothManager.writeCharacteristic(WriteLedStatus, state)
+    }
+
+    fun connectToWifiNetwork(credentials: WifiNetworkCredentials) {
+        customBluetoothManager.writeCharacteristic(WriteSSID, credentials.ssid)
+        customBluetoothManager.writeCharacteristic(WriteNetworkPassword, credentials.ssid)
+        customBluetoothManager.writeCharacteristic(WriteConnectWifi, WriteConnectWifi.Commands.CONNECT)
     }
 
     private fun connect(device: BluetoothDevice) = customBluetoothManager.connect(device)
