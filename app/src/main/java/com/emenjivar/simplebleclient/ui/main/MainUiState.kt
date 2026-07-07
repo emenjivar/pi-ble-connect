@@ -1,10 +1,9 @@
 package com.emenjivar.simplebleclient.ui.main
 
-import android.bluetooth.BluetoothDevice
 import com.emenjivar.simplebleclient.ble.BleConnectionState
+import com.emenjivar.simplebleclient.ble.BluetoothDeviceModel
 
 data class MainUiState(
-    val pairedDevices: List<BluetoothDevice> = emptyList<BluetoothDevice>(),
+    val pairedDevices: List<BluetoothDeviceModel> = emptyList(),
     val connectionState: BleConnectionState = BleConnectionState.Disconnected
 )
-

@@ -9,22 +9,26 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.os.Build
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import javax.inject.Inject
 
+/**
+ * Real BLE implementation backed by Android's GATT stack.
+ * Selected when the `raspberry` flavor is active.
+ */
 @SuppressLint("MissingPermission")
-class CustomBluetoothManager @Inject constructor(
+class RaspberryBleManager(
     private val context: Context,
     private val bleNotifications: BleNotifications,
     private val bleOperationQueue: BleOperationQueue,
-    private val scanner: BleScanner = BleScannerImp(context)
-) : BleScanner by scanner {
+    private val scanner: BleScanner
+) : CustomBleManager, BleScanner by scanner {
     private var bluetoothGatt: BluetoothGatt? = null
     private val _connectionState = MutableStateFlow<BleConnectionState>(BleConnectionState.Disconnected)
-    val connectionState: StateFlow<BleConnectionState> = _connectionState.asStateFlow()
+    override val connectionState: StateFlow<BleConnectionState> = _connectionState.asStateFlow()
 
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
@@ -32,7 +36,7 @@ class CustomBluetoothManager @Inject constructor(
                 BluetoothProfile.STATE_CONNECTED -> {
                     val connectedDevice = gatt?.device
                     if (connectedDevice != null) {
-                        _connectionState.update { BleConnectionState.Connected(connectedDevice) }
+                        _connectionState.update { BleConnectionState.Connected(connectedDevice.toModel()) }
                     } else {
                         _connectionState.update { BleConnectionState.Failed }
                     }
@@ -161,7 +165,8 @@ class CustomBluetoothManager @Inject constructor(
         }
     }
 
-    fun connect(device: BluetoothDevice) {
+    override fun connect(model: BluetoothDeviceModel) {
+        val device = scanner.getRemoteDevice(model.macAddress)
         _connectionState.update { BleConnectionState.Connecting }
         stopScan()
         bluetoothGatt?.close()
@@ -169,16 +174,19 @@ class CustomBluetoothManager @Inject constructor(
             device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
     }
 
-    fun disconnect() {
+    override fun disconnect() {
         bluetoothGatt?.disconnect()
     }
 
-    fun <T> readCharacteristic(command: BleCommand.Read<T>) {
+    override fun <T> observe(command: BleCommand.Read<T>): Flow<T> =
+        bleNotifications.observe(command)
+
+    override fun <T> readCharacteristic(command: BleCommand.Read<T>) {
         val characteristic = command.getCharacteristic() ?: throw CharacteristicNotFoundException()
         bleOperationQueue.enqueue { bluetoothGatt?.readCharacteristic(characteristic) }
     }
 
-    fun <T> writeCharacteristic(command: BleCommand.Write<T>, value: T) {
+    override fun <T> writeCharacteristic(command: BleCommand.Write<T>, value: T) {
         val characteristic = command.getCharacteristic() ?: throw CharacteristicNotFoundException()
         val encodedValue = command.encode(value)
 
@@ -196,7 +204,7 @@ class CustomBluetoothManager @Inject constructor(
         }
     }
 
-    fun <T> BleCommand<T>.getCharacteristic(): BluetoothGattCharacteristic? {
+    private fun <T> BleCommand<T>.getCharacteristic(): BluetoothGattCharacteristic? {
         val characteristic = bluetoothGatt
             ?.getService(service)
             ?.getCharacteristic(characteristic)

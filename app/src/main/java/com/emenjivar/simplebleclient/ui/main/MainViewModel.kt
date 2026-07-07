@@ -2,7 +2,7 @@ package com.emenjivar.simplebleclient.ui.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.emenjivar.simplebleclient.ble.CustomBluetoothManager
+import com.emenjivar.simplebleclient.ble.CustomBleManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val customBluetoothManager: CustomBluetoothManager
+    private val customBluetoothManager: CustomBleManager
 ) : ViewModel() {
     val uiState = MutableStateFlow(MainUiState())
 

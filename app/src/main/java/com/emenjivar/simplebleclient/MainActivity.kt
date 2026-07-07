@@ -41,8 +41,8 @@ class MainActivity : ComponentActivity() {
                                 onRequestBluetoothEnable = { intent ->
                                     enableBluetoothLaunched.launch(intent)
                                 },
-                                onClickDetail = { device ->
-                                    backStack.add(DetailRoute(device = device))
+                                onClickDetail = { model ->
+                                    backStack.add(DetailRoute(device = model))
                                 }
                             )
                         }
