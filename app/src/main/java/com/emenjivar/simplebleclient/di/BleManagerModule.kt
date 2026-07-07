@@ -7,8 +7,9 @@ import com.emenjivar.simplebleclient.ble.BleOperationQueue
 import com.emenjivar.simplebleclient.ble.BleScanner
 import com.emenjivar.simplebleclient.ble.BleScannerImp
 import com.emenjivar.simplebleclient.ble.CustomBleManager
-import com.emenjivar.simplebleclient.ble.MockBleManager
 import com.emenjivar.simplebleclient.ble.RaspberryBleManager
+import com.emenjivar.simplebleclient.ble.mock.MockBleDataSource
+import com.emenjivar.simplebleclient.ble.mock.MockBleManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,6 +27,10 @@ object BleManagerModule {
         @ApplicationContext context: Context
     ): BleScanner = BleScannerImp(context)
 
+    @Provides
+    @Singleton
+    fun providesMockBleDataSource(): MockBleDataSource = MockBleDataSource()
+
     /**
      * Picks the BLE implementation from the active product flavor.
      * `raspberry` → real GATT stack, anything else (`mock`) → in-memory fake.
@@ -36,7 +41,8 @@ object BleManagerModule {
         @ApplicationContext context: Context,
         bleNotifications: BleNotifications,
         bleOperationQueue: BleOperationQueue,
-        scanner: BleScanner
+        scanner: BleScanner,
+        mockBleDataSource: MockBleDataSource
     ): CustomBleManager = when (BuildConfig.FLAVOR) {
         "raspberry" -> RaspberryBleManager(
             context = context,
@@ -46,7 +52,8 @@ object BleManagerModule {
         )
 
         else -> MockBleManager(
-            bleNotifications = bleNotifications
+            bleNotifications = bleNotifications,
+            mockBleDataSource = mockBleDataSource
         )
     }
 }

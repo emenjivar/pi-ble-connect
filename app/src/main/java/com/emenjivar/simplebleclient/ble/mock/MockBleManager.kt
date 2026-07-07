@@ -1,6 +1,14 @@
-package com.emenjivar.simplebleclient.ble
+package com.emenjivar.simplebleclient.ble.mock
 
+import com.emenjivar.simplebleclient.ble.BleCommand
+import com.emenjivar.simplebleclient.ble.BleConnectionState
+import com.emenjivar.simplebleclient.ble.BleNotifications
+import com.emenjivar.simplebleclient.ble.BluetoothDeviceModel
+import com.emenjivar.simplebleclient.ble.CustomBleManager
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
+import com.emenjivar.simplebleclient.ble.getIPCharacteristicUUID
+import com.emenjivar.simplebleclient.ble.getSSIDCharacteristicUUID
+import com.emenjivar.simplebleclient.ble.ledCharacteristicUUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,7 +27,8 @@ import kotlin.time.Duration.Companion.milliseconds
  * Selected when the `mock` flavor is active.
  */
 class MockBleManager(
-    private val bleNotifications: BleNotifications
+    private val bleNotifications: BleNotifications,
+    private val mockBleDataSource: MockBleDataSource
 ) : CustomBleManager {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -37,6 +46,9 @@ class MockBleManager(
     override fun startScan() {
         scope.launch {
             delay(SCAN_DELAY_MS.milliseconds)
+            val mockDevices = mockBleDataSource.getAllDevices().map {
+                BluetoothDeviceModel(name = it.name, macAddress = it.macAddress)
+            }
             _scannedDevices.update { mockDevices }
         }
     }
@@ -81,25 +93,22 @@ class MockBleManager(
         }
     }
 
-    private fun fakeValueFor(characteristic: UUID): ByteArray? = when (characteristic) {
-        getIPCharacteristicUUID -> MOCK_IP.toByteArray()
-        getSSIDCharacteristicUUID -> MOCK_SSID.toByteArray()
-        ledCharacteristicUUID -> byteArrayOf(ledState.bytes)
-        else -> null
+    private fun fakeValueFor(characteristic: UUID): ByteArray? {
+        val connectedDevice = connectionState.value as? BleConnectionState.Connected ?: return null
+        val device = mockBleDataSource.getDeviceDataByMacAddress(
+            macAddress = connectedDevice.device.macAddress
+        ) ?: return null
+
+        return when (characteristic) {
+            getIPCharacteristicUUID -> device.ip.toByteArray()
+            getSSIDCharacteristicUUID -> device.ssid.toByteArray()
+            ledCharacteristicUUID -> byteArrayOf(ledState.bytes)
+            else -> null
+        }
     }
 
     private companion object {
         const val SCAN_DELAY_MS = 800L
         const val CONNECT_DELAY_MS = 600L
-        const val MOCK_IP = "192.168.1.123"
-        const val MOCK_SSID = "MockNetwork"
-
-        val mockDevices = listOf(
-            BluetoothDeviceModel(name = "Raspberry Pi (Mock)", macAddress = "AA:BB:CC:DD:EE:01"),
-            BluetoothDeviceModel(
-                name = "Raspberry Pi Zero (Mock)",
-                macAddress = "AA:BB:CC:DD:EE:02"
-            )
-        )
     }
 }
