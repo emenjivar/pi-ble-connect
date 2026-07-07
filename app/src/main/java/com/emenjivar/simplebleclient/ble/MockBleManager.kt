@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Fake BLE implementation that lets the app run end-to-end without a peripheral.
@@ -23,17 +24,19 @@ class MockBleManager(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val _connectionState = MutableStateFlow<BleConnectionState>(BleConnectionState.Disconnected)
+    private val _connectionState =
+        MutableStateFlow<BleConnectionState>(BleConnectionState.Disconnected)
     override val connectionState: StateFlow<BleConnectionState> = _connectionState.asStateFlow()
 
     private val _scannedDevices = MutableStateFlow<List<BluetoothDeviceModel>>(emptyList())
-    override val scannedDevices: StateFlow<List<BluetoothDeviceModel>> = _scannedDevices.asStateFlow()
+    override val scannedDevices: StateFlow<List<BluetoothDeviceModel>> =
+        _scannedDevices.asStateFlow()
 
     private var ledState = LEDCommand.OFF
 
     override fun startScan() {
         scope.launch {
-            delay(SCAN_DELAY_MS)
+            delay(SCAN_DELAY_MS.milliseconds)
             _scannedDevices.update { mockDevices }
         }
     }
@@ -45,7 +48,7 @@ class MockBleManager(
     override fun connect(model: BluetoothDeviceModel) {
         scope.launch {
             _connectionState.update { BleConnectionState.Connecting }
-            delay(CONNECT_DELAY_MS)
+            delay(CONNECT_DELAY_MS.milliseconds)
             _connectionState.update { BleConnectionState.Connected(model, ready = true) }
         }
     }
@@ -93,7 +96,10 @@ class MockBleManager(
 
         val mockDevices = listOf(
             BluetoothDeviceModel(name = "Raspberry Pi (Mock)", macAddress = "AA:BB:CC:DD:EE:01"),
-            BluetoothDeviceModel(name = "Raspberry Pi Zero (Mock)", macAddress = "AA:BB:CC:DD:EE:02")
+            BluetoothDeviceModel(
+                name = "Raspberry Pi Zero (Mock)",
+                macAddress = "AA:BB:CC:DD:EE:02"
+            )
         )
     }
 }
