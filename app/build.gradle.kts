@@ -21,6 +21,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Pick the BLE data source by build variant. `mock` runs without hardware,
+    // `raspberry` talks to a real peripheral over GATT. The active flavor is
+    // exposed at compile time through BuildConfig.FLAVOR.
+    flavorDimensions += "datasource"
+    productFlavors {
+        create("raspberry") {
+            dimension = "datasource"
+            isDefault = true
+        }
+        create("mock") {
+            dimension = "datasource"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -39,6 +53,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

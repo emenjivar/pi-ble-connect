@@ -1,6 +1,5 @@
 package com.emenjivar.simplebleclient.ble
 
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCallback
 
 sealed class BleConnectionState {
@@ -16,7 +15,7 @@ sealed class BleConnectionState {
      *  Triggering a read/write while [ready]=false, will be silently ignored by the GATT stack
      */
     data class Connected(
-        val device: BluetoothDevice,
+        val device: BluetoothDeviceModel,
         val ready: Boolean = false
     ) : BleConnectionState()
 

@@ -1,7 +1,6 @@
 package com.emenjivar.simplebleclient.ui.detail
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -10,8 +9,8 @@ import android.net.wifi.WifiManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.emenjivar.simplebleclient.ble.BleConnectionState
-import com.emenjivar.simplebleclient.ble.BleNotifications
-import com.emenjivar.simplebleclient.ble.CustomBluetoothManager
+import com.emenjivar.simplebleclient.ble.BluetoothDeviceModel
+import com.emenjivar.simplebleclient.ble.CustomBleManager
 import com.emenjivar.simplebleclient.ble.commands.GetIPAddress
 import com.emenjivar.simplebleclient.ble.commands.GetSSID
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
@@ -36,16 +35,15 @@ import kotlinx.coroutines.flow.update
 @HiltViewModel(assistedFactory = DetailViewModel.Factory::class)
 class DetailViewModel @AssistedInject constructor(
     @ApplicationContext private val context: Context,
-    private val customBluetoothManager: CustomBluetoothManager,
+    private val customBluetoothManager: CustomBleManager,
     @Assisted private val route: DetailRoute,
-    bleNotifications: BleNotifications,
 ) : ViewModel() {
 
     // TODO: use backing fields here
     private val _uiState = MutableStateFlow(
         DetailUiState(
-            macAddress = route.device.address,
-            deviceName = route.device.name
+            macAddress = route.device.macAddress,
+            deviceName = route.device.name ?: "Unknown"
         )
     )
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
@@ -53,11 +51,11 @@ class DetailViewModel @AssistedInject constructor(
     // Assuming a connected device
     val connectionState = customBluetoothManager.connectionState
 
-    private val ipAddress = bleNotifications.observe(GetIPAddress)
-    private val ssid = bleNotifications.observe(GetSSID)
+    private val ipAddress = customBluetoothManager.observe(GetIPAddress)
+    private val ssid = customBluetoothManager.observe(GetSSID)
 
     // Notification type, needs an initial default value
-    private val ledState = bleNotifications.observe(ReadLedStatus)
+    private val ledState = customBluetoothManager.observe(ReadLedStatus)
         .onStart { emit(LEDCommand.OFF) }
 
     init {
@@ -93,7 +91,7 @@ class DetailViewModel @AssistedInject constructor(
         customBluetoothManager.writeCharacteristic(WriteLedStatus, state)
     }
 
-    private fun connect(device: BluetoothDevice) = customBluetoothManager.connect(device)
+    private fun connect(device: BluetoothDeviceModel) = customBluetoothManager.connect(device)
 
     fun connect() = connect(route.device)
 

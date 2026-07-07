@@ -2,7 +2,6 @@ package com.emenjivar.simplebleclient.ui.main
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -38,6 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.emenjivar.simplebleclient.ble.BleConnectionState
+import com.emenjivar.simplebleclient.ble.BluetoothDeviceModel
 import com.emenjivar.simplebleclient.ble.BluetoothDisabledException
 import com.emenjivar.simplebleclient.permission.PermissionDeniedDialog
 import com.emenjivar.simplebleclient.ui.main.components.DeviceItem
@@ -59,7 +59,7 @@ private val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 fun MainScreen(
     viewModel: MainViewModel,
     onRequestBluetoothEnable: (Intent) -> Unit,
-    onClickDetail: (device: BluetoothDevice) -> Unit
+    onClickDetail: (device: BluetoothDeviceModel) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     MainScreen(
@@ -77,7 +77,7 @@ fun MainScreen(
 fun MainScreen(
     uiState: MainUiState,
     onRequestBluetoothEnable: (Intent) -> Unit,
-    onClickDetail: (device: BluetoothDevice) -> Unit,
+    onClickDetail: (device: BluetoothDeviceModel) -> Unit,
     onStartScan: () -> Unit,
     onStopScan: () -> Unit,
 ) {
@@ -173,8 +173,8 @@ fun MainScreen(
                         }
 
                         DeviceItem(
-                            name = device.name,
-                            macAddress = device.address,
+                            name = device.name ?: "Unknown",
+                            macAddress = device.macAddress,
                             status = deviceState,
                             onClick = {
                                 onClickDetail(device)

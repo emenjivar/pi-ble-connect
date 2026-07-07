@@ -1,0 +1,22 @@
+package com.emenjivar.simplebleclient.ble
+
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+
+/**
+ * Contract exposed to the ViewModels. The active flavor (`raspberry` or `mock`)
+ * decides which implementation is injected.
+ */
+interface CustomBleManager {
+    val connectionState: StateFlow<BleConnectionState>
+    val scannedDevices: StateFlow<List<BluetoothDeviceModel>>
+
+    fun startScan()
+    fun stopScan()
+    fun connect(model: BluetoothDeviceModel)
+    fun disconnect()
+
+    fun <T> observe(command: BleCommand.Read<T>): Flow<T>
+    fun <T> readCharacteristic(command: BleCommand.Read<T>)
+    fun <T> writeCharacteristic(command: BleCommand.Write<T>, value: T)
+}

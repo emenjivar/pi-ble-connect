@@ -21,7 +21,7 @@ interface BleScanner {
     /**
      * List of scanned devices.
      */
-    val scannedDevices: StateFlow<List<BluetoothDevice>>
+    val scannedDevices: StateFlow<List<BluetoothDeviceModel>>
 
     /**
      * Start BLE scanning, filtering by [primaryServiceUUID]
@@ -32,6 +32,11 @@ interface BleScanner {
      * Stop BLE scanning
      */
     fun stopScan()
+
+    /**
+     * Recover a real [BluetoothDevice] from a previously scanned [macAddress].
+     */
+    fun getRemoteDevice(macAddress: String): BluetoothDevice
 }
 
 @SuppressLint("MissingPermission")
@@ -42,7 +47,12 @@ class BleScannerImp(
     private val bluetoothManager: BluetoothManager = context.getSystemService(BluetoothManager::class.java)
     private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
 
-    override val scannedDevices = MutableStateFlow<List<BluetoothDevice>>(emptyList())
+    override val scannedDevices = MutableStateFlow<List<BluetoothDeviceModel>>(emptyList())
+
+    override fun getRemoteDevice(macAddress: String): BluetoothDevice {
+        val adapter = bluetoothAdapter ?: throw Exception("Bluetooth not supported")
+        return adapter.getRemoteDevice(macAddress)
+    }
 
     override fun startScan() {
         if (bluetoothAdapter == null) {
@@ -74,12 +84,13 @@ class BleScannerImp(
             super.onScanResult(callbackType, result)
 
             if (result?.device != null) {
+                val model = result.device.toModel()
                 scannedDevices.update { current ->
-                    val exist = current.any { it.address == result.device.address }
+                    val exist = current.any { it.macAddress == model.macAddress }
                     if (exist) {
-                        current.map { if (it.address == result.device.address) result.device else it }
+                        current.map { if (it.macAddress == model.macAddress) model else it }
                     } else {
-                        current + result.device
+                        current + model
                     }
                 }
             }

@@ -1,7 +1,9 @@
 package com.emenjivar.simplebleclient.ui.detail
 
-import android.bluetooth.BluetoothDevice
+import com.emenjivar.simplebleclient.ble.BluetoothDeviceModel
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class DetailRoute(
-    val device: BluetoothDevice
+    val device: BluetoothDeviceModel
 )
