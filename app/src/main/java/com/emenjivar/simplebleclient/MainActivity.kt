@@ -9,7 +9,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.emenjivar.simplebleclient.ui.detail.DetailRoute
 import com.emenjivar.simplebleclient.ui.detail.DetailScreen
@@ -33,6 +35,10 @@ class MainActivity : ComponentActivity() {
             SimpleBLEClientTheme {
                 NavDisplay(
                     backStack = backStack,
+                    entryDecorators = listOf(
+                        rememberSaveableStateHolderNavEntryDecorator(),
+                        rememberViewModelStoreNavEntryDecorator()
+                    ),
                     onBack = { backStack.removeLastOrNull() },
                     entryProvider = entryProvider {
                         entry<MainRoute> {
