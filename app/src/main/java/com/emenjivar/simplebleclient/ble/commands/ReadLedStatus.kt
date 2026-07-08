@@ -1,9 +1,5 @@
 package com.emenjivar.simplebleclient.ble.commands
 
-import com.emenjivar.simplebleclient.ble.BleCommand
-import com.emenjivar.simplebleclient.ble.ledCharacteristicUUID
-import com.emenjivar.simplebleclient.ble.primaryServiceUUID
-
 /**
  * Read whether the led is on/off
  */

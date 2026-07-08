@@ -1,4 +1,4 @@
-package com.emenjivar.simplebleclient.ble
+package com.emenjivar.simplebleclient.ble.model
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice

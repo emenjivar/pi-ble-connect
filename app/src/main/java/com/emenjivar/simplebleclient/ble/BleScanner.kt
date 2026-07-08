@@ -10,6 +10,10 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
+import com.emenjivar.simplebleclient.ble.commands.primaryServiceUUID
+import com.emenjivar.simplebleclient.ble.exceptions.BluetoothDisabledException
+import com.emenjivar.simplebleclient.ble.model.BluetoothDeviceModel
+import com.emenjivar.simplebleclient.ble.model.toModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -24,7 +28,7 @@ interface BleScanner {
     val scannedDevices: StateFlow<List<BluetoothDeviceModel>>
 
     /**
-     * Start BLE scanning, filtering by [primaryServiceUUID]
+     * Start BLE scanning, filtering by [com.emenjivar.simplebleclient.ble.commands.primaryServiceUUID]
      */
     fun startScan()
 

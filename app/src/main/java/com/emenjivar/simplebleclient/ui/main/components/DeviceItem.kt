@@ -26,7 +26,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.emenjivar.simplebleclient.R
-import com.emenjivar.simplebleclient.ble.BleConnectionState
+import com.emenjivar.simplebleclient.ble.model.BleConnectionState
 import com.emenjivar.simplebleclient.ui.detail.components.getStatusColor
 import com.emenjivar.simplebleclient.ui.theme.SimpleBLEClientTheme
 

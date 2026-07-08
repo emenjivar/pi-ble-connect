@@ -18,7 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.emenjivar.simplebleclient.ble.BleConnectionState
+import com.emenjivar.simplebleclient.ble.model.BleConnectionState
 import com.emenjivar.simplebleclient.ui.theme.GreenOpaque
 import com.emenjivar.simplebleclient.ui.theme.Orange
 import com.emenjivar.simplebleclient.ui.theme.RedRaspberry

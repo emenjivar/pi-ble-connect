@@ -54,8 +54,8 @@ import androidx.compose.ui.unit.dp
 import com.emenjivar.simplebleclient.R
 import com.emenjivar.simplebleclient.ui.components.PrimaryButton
 import com.emenjivar.simplebleclient.ui.theme.SimpleBLEClientTheme
-import com.emenjivar.simplebleclient.wifi.StateResult
-import com.emenjivar.simplebleclient.wifi.WifiNetwork
+import com.emenjivar.simplebleclient.ui.detail.StateResult
+import com.emenjivar.simplebleclient.ui.detail.WifiNetwork
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 

@@ -1,14 +1,14 @@
 package com.emenjivar.simplebleclient.ble.mock
 
-import com.emenjivar.simplebleclient.ble.BleCommand
-import com.emenjivar.simplebleclient.ble.BleConnectionState
 import com.emenjivar.simplebleclient.ble.BleNotifications
-import com.emenjivar.simplebleclient.ble.BluetoothDeviceModel
 import com.emenjivar.simplebleclient.ble.CustomBleManager
+import com.emenjivar.simplebleclient.ble.commands.BleCommand
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
-import com.emenjivar.simplebleclient.ble.getIPCharacteristicUUID
-import com.emenjivar.simplebleclient.ble.getSSIDCharacteristicUUID
-import com.emenjivar.simplebleclient.ble.ledCharacteristicUUID
+import com.emenjivar.simplebleclient.ble.commands.getIPCharacteristicUUID
+import com.emenjivar.simplebleclient.ble.commands.getSSIDCharacteristicUUID
+import com.emenjivar.simplebleclient.ble.commands.ledCharacteristicUUID
+import com.emenjivar.simplebleclient.ble.model.BleConnectionState
+import com.emenjivar.simplebleclient.ble.model.BluetoothDeviceModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

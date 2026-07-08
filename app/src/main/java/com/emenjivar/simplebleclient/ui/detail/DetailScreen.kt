@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.emenjivar.simplebleclient.R
-import com.emenjivar.simplebleclient.ble.BleConnectionState
+import com.emenjivar.simplebleclient.ble.model.BleConnectionState
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
 import com.emenjivar.simplebleclient.permission.LocationPermissionDeniedDialog
 import com.emenjivar.simplebleclient.ui.components.PrimaryButton
