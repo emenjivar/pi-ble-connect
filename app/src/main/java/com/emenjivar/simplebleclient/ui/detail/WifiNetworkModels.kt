@@ -1,4 +1,4 @@
-package com.emenjivar.simplebleclient.wifi
+package com.emenjivar.simplebleclient.ui.detail
 
 /**
  * @param ssid The network name displayed in WIFI settings.

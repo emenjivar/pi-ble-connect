@@ -2,8 +2,6 @@ package com.emenjivar.simplebleclient.ui.detail
 
 import com.emenjivar.simplebleclient.ble.model.BleConnectionState
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
-import com.emenjivar.simplebleclient.wifi.StateResult
-import com.emenjivar.simplebleclient.wifi.WifiNetwork
 
 data class DetailUiState(
     val macAddress: String = "N/A",

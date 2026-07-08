@@ -16,8 +16,6 @@ import com.emenjivar.simplebleclient.ble.commands.GetSSID
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
 import com.emenjivar.simplebleclient.ble.commands.ReadLedStatus
 import com.emenjivar.simplebleclient.ble.commands.WriteLedStatus
-import com.emenjivar.simplebleclient.wifi.StateResult
-import com.emenjivar.simplebleclient.wifi.WifiNetwork
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
