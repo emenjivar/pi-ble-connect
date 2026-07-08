@@ -1,4 +1,4 @@
-package com.emenjivar.simplebleclient.ble
+package com.emenjivar.simplebleclient.ble.commands
 
 import java.util.UUID
 

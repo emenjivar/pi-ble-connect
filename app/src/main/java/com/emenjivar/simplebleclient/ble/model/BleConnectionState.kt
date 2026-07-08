@@ -1,6 +1,4 @@
-package com.emenjivar.simplebleclient.ble
-
-import android.bluetooth.BluetoothGattCallback
+package com.emenjivar.simplebleclient.ble.model
 
 sealed class BleConnectionState {
     object Disconnected: BleConnectionState()
@@ -10,7 +8,7 @@ sealed class BleConnectionState {
 
     /**
      * @param ready Indicates when the peripheral is ready for reading/writing operations.
-     *  Becomes `true` after [BluetoothGattCallback.onDescriptorWrite] completes,
+     *  Becomes `true` after [android.bluetooth.BluetoothGattCallback.onDescriptorWrite] completes,
      *  which signals that the GATT stack is free and services/characteristics are fully discovered.
      *  Triggering a read/write while [ready]=false, will be silently ignored by the GATT stack
      */

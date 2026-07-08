@@ -1,5 +1,6 @@
 package com.emenjivar.simplebleclient.ble
 
+import com.emenjivar.simplebleclient.ble.commands.BleCommand
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow

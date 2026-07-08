@@ -8,8 +8,8 @@ import android.content.IntentFilter
 import android.net.wifi.WifiManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.emenjivar.simplebleclient.ble.BleConnectionState
-import com.emenjivar.simplebleclient.ble.BluetoothDeviceModel
+import com.emenjivar.simplebleclient.ble.model.BleConnectionState
+import com.emenjivar.simplebleclient.ble.model.BluetoothDeviceModel
 import com.emenjivar.simplebleclient.ble.CustomBleManager
 import com.emenjivar.simplebleclient.ble.commands.GetIPAddress
 import com.emenjivar.simplebleclient.ble.commands.GetSSID

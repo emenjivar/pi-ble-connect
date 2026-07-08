@@ -36,9 +36,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.emenjivar.simplebleclient.ble.BleConnectionState
-import com.emenjivar.simplebleclient.ble.BluetoothDeviceModel
-import com.emenjivar.simplebleclient.ble.BluetoothDisabledException
+import com.emenjivar.simplebleclient.ble.exceptions.BluetoothDisabledException
+import com.emenjivar.simplebleclient.ble.model.BleConnectionState
+import com.emenjivar.simplebleclient.ble.model.BluetoothDeviceModel
 import com.emenjivar.simplebleclient.permission.PermissionDeniedDialog
 import com.emenjivar.simplebleclient.ui.main.components.DeviceItem
 import com.emenjivar.simplebleclient.ui.theme.SimpleBLEClientTheme

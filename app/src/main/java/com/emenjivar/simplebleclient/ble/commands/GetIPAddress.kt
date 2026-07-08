@@ -1,9 +1,5 @@
 package com.emenjivar.simplebleclient.ble.commands
 
-import com.emenjivar.simplebleclient.ble.BleCommand
-import com.emenjivar.simplebleclient.ble.getIPCharacteristicUUID
-import com.emenjivar.simplebleclient.ble.primaryServiceUUID
-
 object GetIPAddress : BleCommand.Read<String>(
     service = primaryServiceUUID,
     characteristic = getIPCharacteristicUUID
