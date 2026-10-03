@@ -21,6 +21,8 @@ For requesting JSON-based data, we need two characteristics: One for reset the o
 - reset offset -> `write type`
 - request data -> `read type`
 
+Having the same UUID for `reset offset` and `request data` is intentional, merging both operations onto one UUID avoid declaring a second characteristic for two closely-related offset operations
+
 The reset must happens before requesting the data, because the GATT server stores on memory the pointer/offset used during the streaming.
 
 All **reset** calls have the following structure during the writing:
@@ -36,7 +38,7 @@ Every returned chunk uses the following structure:
 
 | Position | Field | Usage |
 | --- | --- | --- |
-| 2 bytes | current offset | Expressed in little-endian, we use this value to know how many data we have received and how many chunks are left to reassemble the data |
+| 2 bytes | current offset | Expressed in little-endian, this is the position where this chunk's content start, not the cumulative total after receiving it |
 | 2 bytes | total size of the complete JSON | Expressed in little-endian, this value is the bytes used for the data before chunked |
 | The rest of the bytes | content | This value is a portion of the complete JSON |
 
@@ -48,17 +50,6 @@ So **C8 00 08 07 C4 00 01 B8 12 E9 BF FF 01 12 00** Can be interpreted as:
 > [!IMPORTANT]
 > The default MTU size in android is 23 bytes, after subtracting the 3-byte ATT header, that leaves 20 usable bytes per packet, and only 16 content bytes after the 4 data-emission bytes
 > The max MTU value is 517 bytes, having 514 usable bytes (510 content bytes per chunk)
-
-**TODO**:
-```
-The offset for chunk N (1-indexed) must be computed from the content-only portion of the chunk, not the full chunk size:
-$offset = (N - 1) \times (chunkSize - chunkHeaderSize)$
-
-Using $chunkSize$ directly (i.e. including the 4-byte header) causes drift: only $chunkSize - chunkHeaderSize$ bytes of each chunk are real JSON content, so after $N$ chunks the actual amount of content delivered is $N \times (chunkSize - chunkHeaderSize)$, not $N \times chunkSize$. Resuming with the wrong formula skips ahead into content that hasn't been sent yet, and the gap grows by $chunkHeaderSize$ bytes per chunk already transmitted — corrupting the reassembled JSON on any resumed transfer.
-
-Example: for a 20-byte chunk size (16 content bytes + 4 header bytes), after 5 chunks the real content position is $5 \times 16 = 80$, not $5 \times 20 = 100$.
-```
-
 
 #### Transmission done
 Assuming a chunk size of **20 bytes**, the last transmitted chunk should looks like this:
@@ -83,7 +74,7 @@ If we set the offset to something equal or greater than **total size**, then we 
 **Write/Read** characteristic `290edf15-b540-4e83-83cf-ba647bf4df33` that is sent after the emission is completed.
 
 For **Write**, it receives a **CRC32** code generated based on the complete data, the gatt server generates the same code, so it verifies the value sent from the client match.
-- 16 bytes: Checksum value, little-endian
+- 4 bytes: Checksum value, little-endian
 
 For **Read**, it returns whether the sent **CRC32** match with GATT server one, or if the content is corrupt
 - 0x00: Corrupted info
