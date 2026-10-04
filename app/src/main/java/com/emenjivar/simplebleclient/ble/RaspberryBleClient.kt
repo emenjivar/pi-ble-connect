@@ -24,7 +24,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withTimeout
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 
 class BleReadResult(
     val service: UUID,
@@ -128,6 +130,10 @@ class RaspberryBleClient(
                         value = value
                     )
                 )
+            } else {
+                deferred.completeExceptionally(
+                    exception = Exception("Read operation failed with status $status")
+                )
             }
 
             bleOperationQueue.operationComplete()
@@ -147,9 +153,24 @@ class RaspberryBleClient(
                         characteristic = characteristic.uuid,
                         value = value
                     )
+
+                    deferred.complete(
+                        BleReadResult(
+                            service = characteristic.service.uuid,
+                            characteristic = characteristic.uuid,
+                            value = value
+                        )
+                    )
                 } else {
                     // Handle error here
+                    deferred.completeExceptionally(
+                        exception = Exception("Read value is null")
+                    )
                 }
+            } else {
+                deferred.completeExceptionally(
+                    exception = Exception("Read operation failed with status $status")
+                )
             }
 
             bleOperationQueue.operationComplete()
@@ -243,15 +264,15 @@ class RaspberryBleClient(
         TODO("Not yet implemented")
     }
 
-    override suspend fun <T> read(command: BleCommand.Read<T>): ByteArray {
+    override suspend fun <T> read(command: BleCommand.Read<T>): T {
         val characteristic = command.getCharacteristic() ?: throw CharacteristicNotFoundException()
         val pending = CompletableDeferred<BleReadResult>()
         // This fires the bluetooth request, setting the result in the callback
         bluetoothGatt?.readCharacteristic(characteristic)
 
         deferred = pending
-        val result = pending.await()
-        return result.value
+        val result =  withTimeout(10_000.milliseconds) {  pending.await() }
+        return command.decode(result.value)
     }
 
     override suspend fun read(command: BleCommand.ReadJSON): JSONChunk {

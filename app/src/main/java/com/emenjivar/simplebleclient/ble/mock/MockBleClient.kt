@@ -105,7 +105,7 @@ class MockBleClient(
         TODO("Not yet implemented")
     }
 
-    override suspend fun <T> read(command: BleCommand.Read<T>): ByteArray {
+    override suspend fun <T> read(command: BleCommand.Read<T>): T {
         TODO("Not yet implemented")
     }
 

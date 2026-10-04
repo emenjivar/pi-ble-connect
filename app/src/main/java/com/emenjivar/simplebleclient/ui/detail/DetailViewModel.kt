@@ -63,9 +63,9 @@ class DetailViewModel @AssistedInject constructor(
         // Read characteristics when connection is ready
         connectionState.onEach { state ->
             if (state is BleConnectionState.Connected && state.ready) {
-                val ipAddress = GetIPAddress.decode(bleClient.read(GetIPAddress))
-                val ssid = GetSSID.decode(bleClient.read(GetSSID))
-                val ledState = ReadLedStatus.decode(bleClient.read(ReadLedStatus))
+                val ipAddress = bleClient.read(GetIPAddress)
+                val ssid = bleClient.read(GetSSID)
+                val ledState = bleClient.read(ReadLedStatus)
                 _uiState.update {
                     it.copy(
                         ipAddress = ipAddress,
