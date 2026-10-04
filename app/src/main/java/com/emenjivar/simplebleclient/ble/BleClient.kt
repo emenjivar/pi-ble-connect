@@ -48,7 +48,7 @@ interface BleClient {
     /**
      * Reads the characteristic in [command] and suspend until the value is returned
      */
-    suspend fun <T> read(command: BleCommand.Read<T>): T
+    suspend fun <T> read(command: BleCommand.Read<T>): ByteArray
 
     /**
      * Reads a single chunk from the characteristic in [command].

@@ -18,11 +18,19 @@ import com.emenjivar.simplebleclient.ble.exceptions.CharacteristicNotFoundExcept
 import com.emenjivar.simplebleclient.ble.model.BleConnectionState
 import com.emenjivar.simplebleclient.ble.model.BluetoothDeviceModel
 import com.emenjivar.simplebleclient.ble.model.toModel
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.util.UUID
+
+class BleReadResult(
+    val service: UUID,
+    val characteristic: UUID,
+    val value: ByteArray
+)
 
 /**
  * Real BLE implementation backed by Android's GATT stack.
@@ -38,6 +46,9 @@ class RaspberryBleClient(
     private var bluetoothGatt: BluetoothGatt? = null
     private val _connectionState = MutableStateFlow<BleConnectionState>(BleConnectionState.Disconnected)
     override val connectionState: StateFlow<BleConnectionState> = _connectionState.asStateFlow()
+
+    // A new instance is created on every read
+    var deferred = CompletableDeferred<BleReadResult>()
 
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
@@ -108,6 +119,14 @@ class RaspberryBleClient(
                     service = characteristic.service.uuid,
                     characteristic = characteristic.uuid,
                     value = value
+                )
+
+                deferred.complete(
+                    BleReadResult(
+                        service = characteristic.service.uuid,
+                        characteristic = characteristic.uuid,
+                        value = value
+                    )
                 )
             }
 
@@ -224,8 +243,15 @@ class RaspberryBleClient(
         TODO("Not yet implemented")
     }
 
-    override suspend fun <T> read(command: BleCommand.Read<T>): T {
-        TODO("Not yet implemented")
+    override suspend fun <T> read(command: BleCommand.Read<T>): ByteArray {
+        val characteristic = command.getCharacteristic() ?: throw CharacteristicNotFoundException()
+        val pending = CompletableDeferred<BleReadResult>()
+        // This fires the bluetooth request, setting the result in the callback
+        bluetoothGatt?.readCharacteristic(characteristic)
+
+        deferred = pending
+        val result = pending.await()
+        return result.value
     }
 
     override suspend fun read(command: BleCommand.ReadJSON): JSONChunk {
