@@ -28,12 +28,6 @@ import kotlinx.coroutines.withTimeout
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
-class BleReadResult(
-    val service: UUID,
-    val characteristic: UUID,
-    val value: ByteArray
-)
-
 /**
  * Real BLE implementation backed by Android's GATT stack.
  * Selected when the `raspberry` flavor is active.
@@ -45,12 +39,19 @@ class RaspberryBleClient(
     private val bleOperationQueue: BleOperationQueue,
     private val scanner: BleScanner
 ) : BleClient, BleScanner by scanner {
+
     private var bluetoothGatt: BluetoothGatt? = null
     private val _connectionState = MutableStateFlow<BleConnectionState>(BleConnectionState.Disconnected)
     override val connectionState: StateFlow<BleConnectionState> = _connectionState.asStateFlow()
 
+    private class BleReadResult(
+        val service: UUID,
+        val characteristic: UUID,
+        val value: ByteArray
+    )
+
     // A new instance is created on every read
-    var deferred = CompletableDeferred<BleReadResult>()
+    private var deferred = CompletableDeferred<BleReadResult>()
 
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
@@ -267,11 +268,20 @@ class RaspberryBleClient(
     override suspend fun <T> read(command: BleCommand.Read<T>): T {
         val characteristic = command.getCharacteristic() ?: throw CharacteristicNotFoundException()
         val pending = CompletableDeferred<BleReadResult>()
+
         // This fires the bluetooth request, setting the result in the callback
         bluetoothGatt?.readCharacteristic(characteristic)
 
         deferred = pending
-        val result =  withTimeout(10_000.milliseconds) {  pending.await() }
+        val result =  withTimeout(READ_TIMEOUT) {  pending.await() }
+
+        // Guard to ensure the request command matches with the returned result
+        if (result.service != command.service && result.characteristic != command.characteristic) {
+            throw Exception(
+                "Wrong characteristic mapped. expected: ${command.characteristic}, returned: ${result.characteristic}"
+            )
+        }
+
         return command.decode(result.value)
     }
 
@@ -285,5 +295,9 @@ class RaspberryBleClient(
             ?.getCharacteristic(characteristic)
 
         return characteristic
+    }
+
+    companion object {
+        private val READ_TIMEOUT = 10_000.milliseconds
     }
 }
