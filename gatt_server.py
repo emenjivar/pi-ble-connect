@@ -7,11 +7,15 @@ SERVICE_UUID            = '290edf15-b540-4e83-83cf-ba647bf4df20'
 CHARACTERISTIC_UUID     = '290edf15-b540-4e83-83cf-ba647bf4df21'
 GET_IP_UUID   = '290edf15-b540-4e83-83cf-ba647bf4df22'
 GET_SSID_UUID = '290edf15-b540-4e83-83cf-ba647bf4df23'
+# The write is persisted now, so a later read returns the written bytes.
+TEST_UUID = '290edf15-b540-4e83-83cf-ba647bf4df24'
 
 # Value to expose
 LED_OFF = 0x00
 LED_ON  = 0x01
 LED_STATE = [LED_OFF]
+
+test_value = []
 
 # IO
 led = LED(17)
@@ -68,6 +72,16 @@ def write_value(value, options):
     if char_obj and char_obj.is_notifying:
         char_obj.set_value(LED_STATE)
 
+def read_test_value():
+    print(f"[READ] Test value was read: {test_value}")
+    return test_value
+
+def write_test_value(value, options):
+    global test_value
+    byte_val = bytes(value)
+    test_value = byte_val
+    print(f"[WRITE] Test value was written: {value}, {byte_val}")
+
 def main():
     global char_obj
 
@@ -118,6 +132,18 @@ def main():
         flags = ['read'],
         read_callback = get_ssid,
         write_callback = None,
+        notify_callback = None
+    )
+
+    app.add_characteristic(
+        srv_id = 1,
+        chr_id = 4,
+        uuid = TEST_UUID,
+        value = test_value,
+        notifying = False,
+        flags = ['read', 'write'],
+        read_callback = read_test_value,
+        write_callback = write_test_value,
         notify_callback = None
     )
 

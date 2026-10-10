@@ -50,8 +50,16 @@ class RaspberryBleClient(
         val value: ByteArray
     )
 
+    // Write operations does not return anything really,
+    // but using this class to verify the operation ends
+    private class BleWriteResult(
+        val service: UUID,
+        val characteristic: UUID
+    )
+
     // A new instance is created on every read
-    private var deferred = CompletableDeferred<BleReadResult>()
+    private var readDeferred = CompletableDeferred<BleReadResult>()
+    private var writeDeferred = CompletableDeferred<BleWriteResult>()
 
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
@@ -124,7 +132,7 @@ class RaspberryBleClient(
                     value = value
                 )
 
-                deferred.complete(
+                readDeferred.complete(
                     BleReadResult(
                         service = characteristic.service.uuid,
                         characteristic = characteristic.uuid,
@@ -132,8 +140,8 @@ class RaspberryBleClient(
                     )
                 )
             } else {
-                deferred.completeExceptionally(
-                    exception = Exception("Read operation failed with status $status")
+                readDeferred.completeExceptionally(
+                    exception = Exception("Read operation ${characteristic.uuid} failed with status $status")
                 )
             }
 
@@ -155,7 +163,7 @@ class RaspberryBleClient(
                         value = value
                     )
 
-                    deferred.complete(
+                    readDeferred.complete(
                         BleReadResult(
                             service = characteristic.service.uuid,
                             characteristic = characteristic.uuid,
@@ -164,13 +172,13 @@ class RaspberryBleClient(
                     )
                 } else {
                     // Handle error here
-                    deferred.completeExceptionally(
+                    readDeferred.completeExceptionally(
                         exception = Exception("Read value is null")
                     )
                 }
             } else {
-                deferred.completeExceptionally(
-                    exception = Exception("Read operation failed with status $status")
+                readDeferred.completeExceptionally(
+                    exception = Exception("Read operation ${characteristic?.uuid} failed with status $status")
                 )
             }
 
@@ -211,6 +219,18 @@ class RaspberryBleClient(
             status: Int
         ) {
             super.onCharacteristicWrite(gatt, characteristic, status)
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                writeDeferred.complete(
+                    BleWriteResult(
+                        service = characteristic.service.uuid,
+                        characteristic = characteristic.uuid
+                    )
+                )
+            } else {
+                writeDeferred.completeExceptionally(
+                    exception = Exception("Write operation ${characteristic.uuid} failed with status $status")
+                )
+            }
             bleOperationQueue.operationComplete()
         }
     }
@@ -262,7 +282,32 @@ class RaspberryBleClient(
         command: BleCommand.Write<T>,
         value: T
     ) {
-        TODO("Not yet implemented")
+        val characteristic = command.getCharacteristic() ?: throw CharacteristicNotFoundException()
+        val pending = CompletableDeferred<BleWriteResult>()
+
+        val encodedValue = command.encode(value)
+        writeDeferred = pending
+
+        // This fires the bluetooth request, setting the result in the callback
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            bluetoothGatt?.writeCharacteristic(
+                characteristic,
+                encodedValue,
+                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+            )
+        } else {
+            characteristic.value = encodedValue
+            bluetoothGatt?.writeCharacteristic(characteristic)
+        }
+
+        val result = withTimeout(WRITE_TIMEOUT) { pending.await() }
+
+        // Guard to ensure the request command matched with the returned result
+        if (result.service != command.service && result.characteristic != command.characteristic) {
+            throw Exception(
+                "Wrong write request was executed. Expected ${command.characteristic}, returned: ${result.characteristic}"
+            )
+        }
     }
 
     override suspend fun <T> read(command: BleCommand.Read<T>): T {
@@ -272,8 +317,8 @@ class RaspberryBleClient(
         // This fires the bluetooth request, setting the result in the callback
         bluetoothGatt?.readCharacteristic(characteristic)
 
-        deferred = pending
-        val result =  withTimeout(READ_TIMEOUT) {  pending.await() }
+        readDeferred = pending
+        val result =  withTimeout(READ_TIMEOUT) { pending.await() }
 
         // Guard to ensure the request command matches with the returned result
         if (result.service != command.service && result.characteristic != command.characteristic) {
@@ -299,5 +344,6 @@ class RaspberryBleClient(
 
     companion object {
         private val READ_TIMEOUT = 10_000.milliseconds
+        private val WRITE_TIMEOUT = 10_000.milliseconds
     }
 }

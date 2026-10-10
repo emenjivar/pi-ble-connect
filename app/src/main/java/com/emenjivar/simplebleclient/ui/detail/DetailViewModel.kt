@@ -16,7 +16,9 @@ import com.emenjivar.simplebleclient.ble.commands.GetIPAddress
 import com.emenjivar.simplebleclient.ble.commands.GetSSID
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
 import com.emenjivar.simplebleclient.ble.commands.ReadLedStatus
+import com.emenjivar.simplebleclient.ble.commands.ReadTest
 import com.emenjivar.simplebleclient.ble.commands.WriteLedStatus
+import com.emenjivar.simplebleclient.ble.commands.WriteTest
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -49,13 +51,6 @@ class DetailViewModel @AssistedInject constructor(
 
     // Assuming a connected device
     val connectionState = bleClient.connectionState
-//
-//    private val ipAddress = bleClient.observe(GetIPAddress)
-//    private val ssid = bleClient.observe(GetSSID)
-//
-//    // Notification type, needs an initial default value
-//    private val ledState = bleClient.observe(ReadLedStatus)
-//        .onStart { emit(LEDCommand.OFF) }
 
     init {
         connect(route.device)
@@ -74,6 +69,20 @@ class DetailViewModel @AssistedInject constructor(
                         ledState = ledState
                     )
                 }
+
+                val originalTestValue = bleClient.read(ReadTest)
+                Log.wtf("DetailViewModel", "original: $originalTestValue")
+
+                val toWrite = "hello 1"
+                bleClient.write(WriteTest, toWrite)
+
+                val newValue = bleClient.read(ReadTest)
+                Log.wtf("DetailViewModel", "new: $newValue")
+
+                bleClient.write(WriteTest, "bye")
+
+                val newNewValue = bleClient.read(ReadTest)
+                Log.wtf("DetailViewModel", "new new: $newNewValue")
             }
         }.launchIn(viewModelScope)
     }
