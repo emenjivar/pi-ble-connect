@@ -10,5 +10,5 @@ data class DetailUiState(
     val ipAddress: String = "N/A",
     val ledState: LEDCommand = LEDCommand.OFF,
     val connectionState: BleConnectionState = BleConnectionState.Disconnected,
-    val wifiScanResult: StateResult<List<WifiNetwork>> = StateResult.Loading
+    val wifiScanResult: StateResult<List<WifiNetwork>> = StateResult.Loading,
 )

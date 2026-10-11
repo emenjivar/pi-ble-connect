@@ -11,6 +11,7 @@ val jsonServiceUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df3
 val ledCharacteristicUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df21")
 val getIPCharacteristicUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df22")
 val getSSIDCharacteristicUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df23")
+val testCharacteristicUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df24")
 
 // JSON-related characteristics
 val dataEmissionUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df32")

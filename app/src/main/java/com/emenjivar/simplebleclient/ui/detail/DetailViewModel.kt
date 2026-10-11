@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.WifiManager
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.emenjivar.simplebleclient.ble.model.BleConnectionState
@@ -15,7 +16,9 @@ import com.emenjivar.simplebleclient.ble.commands.GetIPAddress
 import com.emenjivar.simplebleclient.ble.commands.GetSSID
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
 import com.emenjivar.simplebleclient.ble.commands.ReadLedStatus
+import com.emenjivar.simplebleclient.ble.commands.ReadTest
 import com.emenjivar.simplebleclient.ble.commands.WriteLedStatus
+import com.emenjivar.simplebleclient.ble.commands.WriteTest
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -49,38 +52,37 @@ class DetailViewModel @AssistedInject constructor(
     // Assuming a connected device
     val connectionState = bleClient.connectionState
 
-    private val ipAddress = bleClient.observe(GetIPAddress)
-    private val ssid = bleClient.observe(GetSSID)
-
-    // Notification type, needs an initial default value
-    private val ledState = bleClient.observe(ReadLedStatus)
-        .onStart { emit(LEDCommand.OFF) }
-
     init {
         connect(route.device)
 
         // Read characteristics when connection is ready
         connectionState.onEach { state ->
             if (state is BleConnectionState.Connected && state.ready) {
-                bleClient.readCharacteristic(GetIPAddress)
-                bleClient.readCharacteristic(GetSSID)
-            }
-        }.launchIn(viewModelScope)
+                val ipAddress = bleClient.read(GetIPAddress)
+                val ssid = bleClient.read(GetSSID)
+                val ledState = bleClient.read(ReadLedStatus)
+                _uiState.update {
+                    it.copy(
+                        ipAddress = ipAddress,
+                        ssid = ssid,
+                        connectionState = state,
+                        ledState = ledState
+                    )
+                }
 
-        // Listed BLE responses and updated uiState
-        combine(
-            ipAddress,
-            ssid,
-            ledState,
-            connectionState
-        ) { ipAddress, ssid, ledState, connectionState ->
-            _uiState.update {
-                it.copy(
-                    ipAddress = ipAddress,
-                    ssid = ssid,
-                    ledState = ledState,
-                    connectionState = connectionState
-                )
+                val originalTestValue = bleClient.read(ReadTest)
+                Log.wtf("DetailViewModel", "original: $originalTestValue")
+
+                val toWrite = "hello 1"
+                bleClient.write(WriteTest, toWrite)
+
+                val newValue = bleClient.read(ReadTest)
+                Log.wtf("DetailViewModel", "new: $newValue")
+
+                bleClient.write(WriteTest, "bye")
+
+                val newNewValue = bleClient.read(ReadTest)
+                Log.wtf("DetailViewModel", "new new: $newNewValue")
             }
         }.launchIn(viewModelScope)
     }

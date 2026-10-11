@@ -58,6 +58,24 @@ python3 gatt_server.py
 
 To exit the virtual environment, run `deactivate`.
 
+### Checking the server is running
+
+If the server runs as a systemd service:
+
+```bash
+sudo systemctl status gatt_server.service
+```
+
+Look for `active (running)`. To see its output, run `journalctl -u gatt_server.service -f`.
+
+If you started it manually, run:
+
+```bash
+pgrep -af gatt_server.py
+```
+
+It prints the process if the server is running.
+
 ### Auto-start on boot (systemd)
 
 Create a service file:
