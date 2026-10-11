@@ -126,12 +126,6 @@ class RaspberryBleClient(
             status: Int
         ) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                bleNotifications.emit(
-                    service = characteristic.service.uuid,
-                    characteristic = characteristic.uuid,
-                    value = value
-                )
-
                 readDeferred.complete(
                     BleReadResult(
                         service = characteristic.service.uuid,
@@ -157,12 +151,6 @@ class RaspberryBleClient(
                 val value = characteristic?.value
 
                 if (value != null) {
-                    bleNotifications.emit(
-                        service = characteristic.service.uuid,
-                        characteristic = characteristic.uuid,
-                        value = value
-                    )
-
                     readDeferred.complete(
                         BleReadResult(
                             service = characteristic.service.uuid,
@@ -181,8 +169,6 @@ class RaspberryBleClient(
                     exception = Exception("Read operation ${characteristic?.uuid} failed with status $status")
                 )
             }
-
-            bleOperationQueue.operationComplete()
         }
 
         override fun onCharacteristicChanged(
@@ -303,7 +289,7 @@ class RaspberryBleClient(
         val result = withTimeout(WRITE_TIMEOUT) { pending.await() }
 
         // Guard to ensure the request command matched with the returned result
-        if (result.service != command.service && result.characteristic != command.characteristic) {
+        if (result.service != command.service || result.characteristic != command.characteristic) {
             throw Exception(
                 "Wrong write request was executed. Expected ${command.characteristic}, returned: ${result.characteristic}"
             )
@@ -313,15 +299,15 @@ class RaspberryBleClient(
     override suspend fun <T> read(command: BleCommand.Read<T>): T {
         val characteristic = command.getCharacteristic() ?: throw CharacteristicNotFoundException()
         val pending = CompletableDeferred<BleReadResult>()
+        readDeferred = pending
 
         // This fires the bluetooth request, setting the result in the callback
         bluetoothGatt?.readCharacteristic(characteristic)
 
-        readDeferred = pending
         val result =  withTimeout(READ_TIMEOUT) { pending.await() }
 
         // Guard to ensure the request command matches with the returned result
-        if (result.service != command.service && result.characteristic != command.characteristic) {
+        if (result.service != command.service || result.characteristic != command.characteristic) {
             throw Exception(
                 "Wrong characteristic mapped. expected: ${command.characteristic}, returned: ${result.characteristic}"
             )
@@ -330,6 +316,7 @@ class RaspberryBleClient(
         return command.decode(result.value)
     }
 
+    // TODO: shouldn't ve here
     override suspend fun read(command: BleCommand.ReadJSON): JSONChunk {
         TODO("Not yet implemented")
     }
