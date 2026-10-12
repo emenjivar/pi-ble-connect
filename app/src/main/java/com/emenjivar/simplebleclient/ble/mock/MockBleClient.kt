@@ -98,6 +98,10 @@ class MockBleClient(
         TODO("Not yet implemented")
     }
 
+    override suspend fun getUsableBytes(): Int {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun <T> write(
         command: BleCommand.Write<T>,
         value: T

@@ -19,14 +19,19 @@ import com.emenjivar.simplebleclient.ble.model.BleConnectionState
 import com.emenjivar.simplebleclient.ble.model.BluetoothDeviceModel
 import com.emenjivar.simplebleclient.ble.model.toModel
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import java.util.UUID
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Real BLE implementation backed by Android's GATT stack.
@@ -41,7 +46,8 @@ class RaspberryBleClient(
 ) : BleClient, BleScanner by scanner {
 
     private var bluetoothGatt: BluetoothGatt? = null
-    private val _connectionState = MutableStateFlow<BleConnectionState>(BleConnectionState.Disconnected)
+    private val _connectionState =
+        MutableStateFlow<BleConnectionState>(BleConnectionState.Disconnected)
     override val connectionState: StateFlow<BleConnectionState> = _connectionState.asStateFlow()
 
     private class BleReadResult(
@@ -60,6 +66,11 @@ class RaspberryBleClient(
     // A new instance is created on every read
     private var readDeferred = CompletableDeferred<BleReadResult>()
     private var writeDeferred = CompletableDeferred<BleWriteResult>()
+    private var mtuDeferred = CompletableDeferred<Int>()
+    private var cachedMtu: Int? = null
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var mtuNegotiationJob: Job? = null
 
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
@@ -73,14 +84,17 @@ class RaspberryBleClient(
                     }
 
                     gatt?.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
+                    mtuNegotiationJob = scope.launch { getMTU() }
                     gatt?.discoverServices()
                 }
 
                 BluetoothProfile.STATE_DISCONNECTED -> {
+                    mtuNegotiationJob?.cancel()
                     bleOperationQueue.clear()
                     bluetoothGatt?.close()
                     _connectionState.update { BleConnectionState.Disconnected }
                     bluetoothGatt = null
+                    cachedMtu = null
                 }
 
                 BluetoothProfile.STATE_CONNECTING -> {
@@ -116,6 +130,15 @@ class RaspberryBleClient(
                     descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
                     gatt.writeDescriptor(descriptor)
                 }
+            }
+        }
+
+        override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
+            super.onMtuChanged(gatt, mtu, status)
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                mtuDeferred.complete(mtu)
+            } else {
+                mtuDeferred.completeExceptionally(Exception("MTU negotiation failed"))
             }
         }
 
@@ -261,7 +284,22 @@ class RaspberryBleClient(
     }
 
     override suspend fun getMTU(): Int {
-        TODO("Not yet implemented")
+        cachedMtu?.let { return it }
+
+        val pending = CompletableDeferred<Int>()
+        mtuDeferred = pending
+
+        // Android 14+ ignore the negotiation and set 517 by default
+        bluetoothGatt?.requestMtu(MAX_MTU)
+
+        val negotiatedMTU = withTimeout(MTU_TIMEOUT) { pending.await() }
+        cachedMtu = negotiatedMTU
+        return negotiatedMTU
+    }
+
+    override suspend fun getUsableBytes(): Int {
+        val negotiatedMTU = getMTU()
+        return negotiatedMTU - HEADER_SIZE
     }
 
     override suspend fun <T> write(
@@ -304,7 +342,7 @@ class RaspberryBleClient(
         // This fires the bluetooth request, setting the result in the callback
         bluetoothGatt?.readCharacteristic(characteristic)
 
-        val result =  withTimeout(READ_TIMEOUT) { pending.await() }
+        val result = withTimeout(READ_TIMEOUT) { pending.await() }
 
         // Guard to ensure the request command matches with the returned result
         if (result.service != command.service || result.characteristic != command.characteristic) {
@@ -330,7 +368,12 @@ class RaspberryBleClient(
     }
 
     companion object {
-        private val READ_TIMEOUT = 10_000.milliseconds
-        private val WRITE_TIMEOUT = 10_000.milliseconds
+        private val READ_TIMEOUT = 10.seconds
+        private val WRITE_TIMEOUT = 10.seconds
+        private val MTU_TIMEOUT = 10.seconds
+        private const val MAX_MTU = 517
+
+        // usable_bytes = negotiated_mtu = header_size
+        private const val HEADER_SIZE = 5
     }
 }

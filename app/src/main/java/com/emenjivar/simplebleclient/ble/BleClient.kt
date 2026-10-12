@@ -40,6 +40,8 @@ interface BleClient {
 
     suspend fun getMTU(): Int
 
+    suspend fun getUsableBytes(): Int
+
     /**
      * Writes [value] to the characteristic in [command] and suspends until it completes
      */
