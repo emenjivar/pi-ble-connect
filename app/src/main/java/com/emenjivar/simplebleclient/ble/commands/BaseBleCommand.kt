@@ -87,7 +87,8 @@ sealed class BleCommand<T> {
     }
 
     /**
-     * Similar to [Read] but used for parsing JSON data.
+     * A [Read] whose [decode] is fixed to parsing a JSON chunk, so subclasses only
+     * need to supply [service] and [characteristic].
      *
      * Read a chunk of data that follows the structure:
      * - 2 bytes: Current offset expressed in little-endian
@@ -100,10 +101,10 @@ sealed class BleCommand<T> {
      * - content: `C4 00 01 B8 12 E9 BF FF 01 12 00`
      */
     abstract class ReadJSON(
-        override val service: UUID,
-        override val characteristic: UUID
-    ): BleCommand<JSONChunk>() {
-        fun decode(bytes: ByteArray): JSONChunk {
+        service: UUID,
+        characteristic: UUID
+    ): Read<JSONChunk>(service, characteristic) {
+        override fun decode(bytes: ByteArray): JSONChunk {
             require(bytes.size >= 4) { "Chunk too short: ${bytes.size} bytes "}
             val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
             return JSONChunk(

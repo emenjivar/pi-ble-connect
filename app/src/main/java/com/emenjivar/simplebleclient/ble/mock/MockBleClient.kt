@@ -6,7 +6,6 @@ import com.emenjivar.simplebleclient.ble.commands.BleCommand
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
 import com.emenjivar.simplebleclient.ble.commands.getIPCharacteristicUUID
 import com.emenjivar.simplebleclient.ble.commands.getSSIDCharacteristicUUID
-import com.emenjivar.simplebleclient.ble.commands.json.JSONChunk
 import com.emenjivar.simplebleclient.ble.commands.ledCharacteristicUUID
 import com.emenjivar.simplebleclient.ble.model.BleConnectionState
 import com.emenjivar.simplebleclient.ble.model.BluetoothDeviceModel
@@ -98,6 +97,10 @@ class MockBleClient(
         TODO("Not yet implemented")
     }
 
+    override suspend fun getUsableBytes(): Int {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun <T> write(
         command: BleCommand.Write<T>,
         value: T
@@ -106,10 +109,6 @@ class MockBleClient(
     }
 
     override suspend fun <T> read(command: BleCommand.Read<T>): T {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun read(command: BleCommand.ReadJSON): JSONChunk {
         TODO("Not yet implemented")
     }
 

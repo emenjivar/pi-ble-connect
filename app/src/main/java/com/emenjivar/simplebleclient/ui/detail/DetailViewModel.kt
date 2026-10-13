@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import com.emenjivar.simplebleclient.ble.model.BleConnectionState
 import com.emenjivar.simplebleclient.ble.model.BluetoothDeviceModel
 import com.emenjivar.simplebleclient.ble.BleClient
+import com.emenjivar.simplebleclient.ble.ChunkJsonDecoder
 import com.emenjivar.simplebleclient.ble.commands.GetIPAddress
 import com.emenjivar.simplebleclient.ble.commands.GetSSID
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
@@ -19,6 +20,8 @@ import com.emenjivar.simplebleclient.ble.commands.ReadLedStatus
 import com.emenjivar.simplebleclient.ble.commands.ReadTest
 import com.emenjivar.simplebleclient.ble.commands.WriteLedStatus
 import com.emenjivar.simplebleclient.ble.commands.WriteTest
+import com.emenjivar.simplebleclient.ble.commands.json.ReadDataEmission
+import com.emenjivar.simplebleclient.ble.commands.json.ResetDataEmission
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -27,11 +30,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.Serializable
 
 @HiltViewModel(assistedFactory = DetailViewModel.Factory::class)
 class DetailViewModel @AssistedInject constructor(
@@ -73,16 +75,32 @@ class DetailViewModel @AssistedInject constructor(
                 val originalTestValue = bleClient.read(ReadTest)
                 Log.wtf("DetailViewModel", "original: $originalTestValue")
 
-                val toWrite = "hello 1"
-                bleClient.write(WriteTest, toWrite)
+                // Based on MTU negotiation
+                val usableBytes = bleClient.getUsableBytes()
 
-                val newValue = bleClient.read(ReadTest)
-                Log.wtf("DetailViewModel", "new: $newValue")
+                val maxMtuPayload = "a".repeat(usableBytes)
+                try {
+                    bleClient.write(WriteTest, maxMtuPayload)
+                    val readBack = bleClient.read(ReadTest)
+                    Log.wtf(
+                        "DetailViewModel",
+                        "MTU write succeeded: wrote ${maxMtuPayload.length} bytes, read back ${readBack.length} bytes"
+                    )
+                } catch (e: Exception) {
+                    Log.wtf("DetailViewModel", "MTU write failed for ${maxMtuPayload.length} bytes: ${e.message}")
+                }
 
-                bleClient.write(WriteTest, "bye")
-
-                val newNewValue = bleClient.read(ReadTest)
-                Log.wtf("DetailViewModel", "new new: $newNewValue")
+                // DEBUG ONLY: verifies the JSON-chunk protocol against gatt_server.py. Discard once confirmed.
+                try {
+                    val chunkDecoder = ChunkJsonDecoder(bleClient)
+                    val wifiScan = chunkDecoder.fetchJSON<DebugWifiScanResponse>(
+                        readCommand = ReadDataEmission,
+                        resetCommand = ResetDataEmission
+                    )
+                    Log.wtf("DetailViewModel", "JSON chunk fetch succeeded: $wifiScan")
+                } catch (e: Exception) {
+                    Log.wtf("DetailViewModel", "JSON chunk fetch failed: ${e.message}")
+                }
             }
         }.launchIn(viewModelScope)
     }
@@ -135,3 +153,14 @@ class DetailViewModel @AssistedInject constructor(
         fun create(route: DetailRoute): DetailViewModel
     }
 }
+
+// DEBUG ONLY: mirrors the hardcoded JSON in gatt_server.py, discard once the protocol is confirmed working.
+@Serializable
+private data class DebugWifiScanResponse(val networks: List<DebugWifiNetwork>)
+
+@Serializable
+private data class DebugWifiNetwork(
+    val ssid: String,
+    val rssi: Int,
+    val secure: Boolean
+)

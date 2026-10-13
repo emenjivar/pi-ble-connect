@@ -1,7 +1,6 @@
 package com.emenjivar.simplebleclient.ble
 
 import com.emenjivar.simplebleclient.ble.commands.BleCommand
-import com.emenjivar.simplebleclient.ble.commands.json.JSONChunk
 import com.emenjivar.simplebleclient.ble.model.BleConnectionState
 import com.emenjivar.simplebleclient.ble.model.BluetoothDeviceModel
 import kotlinx.coroutines.flow.Flow
@@ -40,6 +39,8 @@ interface BleClient {
 
     suspend fun getMTU(): Int
 
+    suspend fun getUsableBytes(): Int
+
     /**
      * Writes [value] to the characteristic in [command] and suspends until it completes
      */
@@ -49,11 +50,4 @@ interface BleClient {
      * Reads the characteristic in [command] and suspend until the value is returned
      */
     suspend fun <T> read(command: BleCommand.Read<T>): T
-
-    /**
-     * Reads a single chunk from the characteristic in [command].
-     * The caller must keep calling this until [JSONChunk.currentOffset]
-     * reaches [JSONChunk.totalSize] to reassemble the full payload.
-     */
-    suspend fun read(command: BleCommand.ReadJSON): JSONChunk
 }

@@ -2,6 +2,7 @@ package com.emenjivar.simplebleclient.ble
 
 import com.emenjivar.simplebleclient.ble.commands.json.JSONChunk
 import com.emenjivar.simplebleclient.ble.commands.json.ReadDataEmission
+import com.emenjivar.simplebleclient.ble.commands.json.ResetChunkParams
 import com.emenjivar.simplebleclient.ble.commands.json.ResetDataEmission
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
@@ -17,19 +18,36 @@ import org.mockito.kotlin.whenever
 class ChunkJsonDecoderTest {
 
     @Test
-    fun `resetOffset should write the usable chunk size to RequestDataEmission`() = runTest {
+    fun `resetOffset should write the usable chunk size and offset to RequestDataEmission`() = runTest {
         val mtuSize = 120
         val bleManager = mock<BleClient>()
         whenever(bleManager.getMTU()).thenReturn(mtuSize)
         val chunkJsonDecoder = ChunkJsonDecoder(bleManager)
 
-        chunkJsonDecoder.resetOffset(ResetDataEmission)
+        chunkJsonDecoder.resetOffset(ResetDataEmission, offset = 0)
 
         val expectedChunkSize = chunkJsonDecoder.getUsableBytesPerChunk()
         verify(bleManager)
             .write(
                 command = ResetDataEmission,
-                value = expectedChunkSize
+                value = ResetChunkParams(chunkSize = expectedChunkSize, offset = 0)
+            )
+    }
+
+    @Test
+    fun `resetOffset should forward a non-zero offset to resume a previous emission`() = runTest {
+        val mtuSize = 120
+        val bleManager = mock<BleClient>()
+        whenever(bleManager.getMTU()).thenReturn(mtuSize)
+        val chunkJsonDecoder = ChunkJsonDecoder(bleManager)
+
+        chunkJsonDecoder.resetOffset(ResetDataEmission, offset = 300)
+
+        val expectedChunkSize = chunkJsonDecoder.getUsableBytesPerChunk()
+        verify(bleManager)
+            .write(
+                command = ResetDataEmission,
+                value = ResetChunkParams(chunkSize = expectedChunkSize, offset = 300)
             )
     }
 
@@ -67,7 +85,7 @@ class ChunkJsonDecoderTest {
         verify(bleManager, times(2))
             .write(
                 command = ResetDataEmission,
-                value = expectedChunkSize
+                value = ResetChunkParams(chunkSize = expectedChunkSize, offset = 0)
             )
     }
 
@@ -79,6 +97,20 @@ class ChunkJsonDecoderTest {
 
         val result = chunkJsonDecoder.getUsableBytesPerChunk()
         assertEquals(113, result) // 120 - 3 (ATT header) - 4 (chunk header)
+    }
+
+    @Test
+    fun `getUsableBytesPerChunk should cap the chunk size at the 512-byte attribute value limit`() = runTest {
+        val bleManager = mock<BleClient>()
+        whenever(bleManager.getMTU()).thenReturn(517) // max MTU
+
+        val chunkJsonDecoder = ChunkJsonDecoder(bleManager)
+
+        val result = chunkJsonDecoder.getUsableBytesPerChunk()
+        // Naively would be 517 - 3 - 4 = 510, but header(4) + content(510) = 514 bytes
+        // exceeds the Bluetooth Core Spec's 512-byte attribute value cap, so it must be
+        // clamped to 512 - 4 = 508.
+        assertEquals(508, result)
     }
 
     @Test
