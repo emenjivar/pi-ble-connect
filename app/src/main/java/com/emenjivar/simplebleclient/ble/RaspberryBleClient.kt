@@ -11,7 +11,6 @@ import android.content.Context
 import android.os.Build
 import com.emenjivar.simplebleclient.ble.commands.BleCommand
 import com.emenjivar.simplebleclient.ble.commands.clientCharacteristicConfigUUID
-import com.emenjivar.simplebleclient.ble.commands.json.JSONChunk
 import com.emenjivar.simplebleclient.ble.commands.ledCharacteristicUUID
 import com.emenjivar.simplebleclient.ble.commands.primaryServiceUUID
 import com.emenjivar.simplebleclient.ble.exceptions.CharacteristicNotFoundException
@@ -335,27 +334,6 @@ class RaspberryBleClient(
     }
 
     override suspend fun <T> read(command: BleCommand.Read<T>): T {
-        val characteristic = command.getCharacteristic() ?: throw CharacteristicNotFoundException()
-        val pending = CompletableDeferred<BleReadResult>()
-        readDeferred = pending
-
-        // This fires the bluetooth request, setting the result in the callback
-        bluetoothGatt?.readCharacteristic(characteristic)
-
-        val result = withTimeout(READ_TIMEOUT) { pending.await() }
-
-        // Guard to ensure the request command matches with the returned result
-        if (result.service != command.service || result.characteristic != command.characteristic) {
-            throw Exception(
-                "Wrong characteristic mapped. expected: ${command.characteristic}, returned: ${result.characteristic}"
-            )
-        }
-
-        return command.decode(result.value)
-    }
-
-    // TODO: shouldn't ve here
-    override suspend fun read(command: BleCommand.ReadJSON): JSONChunk {
         val characteristic = command.getCharacteristic() ?: throw CharacteristicNotFoundException()
         val pending = CompletableDeferred<BleReadResult>()
         readDeferred = pending
