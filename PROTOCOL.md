@@ -21,7 +21,7 @@ For requesting JSON-based data, we need two characteristics: One for reset the o
 - reset offset -> `write type`
 - request data -> `read type`
 
-Having the same UUID for `reset offset` and `request data` is intentional, merging both operations onto one UUID avoid declaring a second characteristic for two closely-related offset operations
+Having the same UUID for `reset offset` and `request data` is intentional, merging both operations onto one UUID avoids declaring a second characteristic for two closely-related offset operations
 
 The reset must happens before requesting the data, because the GATT server stores on memory the pointer/offset used during the streaming.
 
@@ -29,7 +29,7 @@ All **reset** calls have the following structure during the writing:
 
 | Position | Field | Usage |
 | --- | --- | --- |
-| 4 bytes | chunk size | Expected chunk size, every chunk has this size during the emission, taking in consideration the headers and the content<br><br>This value should come from the negotiated MTU, where:<br>$chunkSize = negotiatedMTU - ATTHeaderSize - chunkHeaderSize$<br><br> $ATTHeaderSize$: 3 bytes - The ATT PDU (Protocol Data Unit) header prepend on every packet by the Low level bluetooth protocol<br><br> $chunkHeaderSize$: 4 bytes<br><br> So for a MTU of **514 bytes**, the chunkSize is $514 bytes - 3 bytes - 4 bytes = 507 bytes$<br> |
+| 4 bytes | chunk size | Expected chunk size, every chunk has this size during the emission, taking in consideration the headers and the content<br><br>This value should come from the negotiated MTU, where:<br>$chunkSize = negotiatedMTU - ATTHeaderSize - chunkHeaderSize$<br><br> $ATTHeaderSize$: 5 bytes - The ATT PDU (Protocol Data Unit) header prepend on every packet by the Low level bluetooth protocol<br><br> $chunkHeaderSize$: 4 bytes<br><br> So for a MTU of **517 bytes**, the chunkSize is $517 bytes - 5 bytes - 4 bytes = 508 bytes$<br> |
 | 4 bytes | offset | The offset where the emission should start, this value starts from 0 to the total of bytes of the complete JSON.<br>Starting from 0 indicates a fresh emission, but we can resume the emission by using a value greater that 0, we can also sent the total of bytes of the complete JSON or above, but there won't be any data to transmit, so is kind of useless |
 
 After correctly resetting or resuming the offset, we start reading any **request data** characteristic until the transmission is done, so we can reassemble the complete data into a valid JSON
@@ -48,8 +48,8 @@ So **C8 00 08 07 C4 00 01 B8 12 E9 BF FF 01 12 00** Can be interpreted as:
 - Content: **C4 00 01 B8 12 E9 BF FF 01 12 00**
 
 > [!IMPORTANT]
-> The default MTU size in android is 23 bytes, after subtracting the 3-byte ATT header, that leaves 20 usable bytes per packet, and only 16 content bytes after the 4 data-emission bytes
-> The max MTU value is 517 bytes, having 514 usable bytes (510 content bytes per chunk)
+> The default MTU size in android is 23 bytes, after subtracting the 5-byte ATT header, that leaves 18 usable bytes per packet, and only 14 content bytes after the 4 data-emission bytes
+> The max MTU value is 517 bytes, having 512 usable bytes (508 content bytes per chunk)
 
 #### Transmission done
 Assuming a chunk size of **20 bytes**, the last transmitted chunk should looks like this:
