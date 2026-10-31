@@ -16,7 +16,7 @@ val testCharacteristicUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba64
 // JSON-related characteristics
 val dataEmissionUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df32")
 val verifyIntegrityUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df33")
-val writeJSONTestUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df33")
+val writeJSONTestUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df34")
 
 // Used for listening notification changes
 val clientCharacteristicConfigUUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
