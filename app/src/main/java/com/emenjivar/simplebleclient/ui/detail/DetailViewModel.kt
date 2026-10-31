@@ -22,6 +22,7 @@ import com.emenjivar.simplebleclient.ble.commands.WriteLedStatus
 import com.emenjivar.simplebleclient.ble.commands.WriteTest
 import com.emenjivar.simplebleclient.ble.commands.json.ReadDataEmission
 import com.emenjivar.simplebleclient.ble.commands.json.ResetDataEmission
+import com.emenjivar.simplebleclient.ble.commands.json.WriteJSONTest
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -76,23 +77,24 @@ class DetailViewModel @AssistedInject constructor(
                 Log.wtf("DetailViewModel", "original: $originalTestValue")
 
                 // Based on MTU negotiation
-                val usableBytes = bleClient.getUsableBytes()
+//                val usableBytes = bleClient.getUsableBytes()
 
-                val maxMtuPayload = "a".repeat(usableBytes)
-                try {
-                    bleClient.write(WriteTest, maxMtuPayload)
-                    val readBack = bleClient.read(ReadTest)
-                    Log.wtf(
-                        "DetailViewModel",
-                        "MTU write succeeded: wrote ${maxMtuPayload.length} bytes, read back ${readBack.length} bytes"
-                    )
-                } catch (e: Exception) {
-                    Log.wtf("DetailViewModel", "MTU write failed for ${maxMtuPayload.length} bytes: ${e.message}")
-                }
+//                val maxMtuPayload = "a".repeat(usableBytes)
+//                try {
+//                    bleClient.write(WriteTest, maxMtuPayload)
+//                    val readBack = bleClient.read(ReadTest)
+//                    Log.wtf(
+//                        "DetailViewModel",
+//                        "MTU write succeeded: wrote ${maxMtuPayload.length} bytes, read back ${readBack.length} bytes"
+//                    )
+//                } catch (e: Exception) {
+//                    Log.wtf("DetailViewModel", "MTU write failed for ${maxMtuPayload.length} bytes: ${e.message}")
+//                }
 
                 // DEBUG ONLY: verifies the JSON-chunk protocol against gatt_server.py. Discard once confirmed.
+                val chunkDecoder = ChunkJsonDecoder(bleClient)
                 try {
-                    val chunkDecoder = ChunkJsonDecoder(bleClient)
+
                     val wifiScan = chunkDecoder.fetchJSON<DebugWifiScanResponse>(
                         readCommand = ReadDataEmission,
                         resetCommand = ResetDataEmission
@@ -100,6 +102,44 @@ class DetailViewModel @AssistedInject constructor(
                     Log.wtf("DetailViewModel", "JSON chunk fetch succeeded: $wifiScan")
                 } catch (e: Exception) {
                     Log.wtf("DetailViewModel", "JSON chunk fetch failed: ${e.message}")
+                }
+
+                // DEBUG ONLY: Verify JSON-chunk writing against gatt_server.py
+                try {
+                    @Serializable
+                    data class Security(
+                        val protocol: String,
+                        val strength: Int
+                    )
+
+                    @Serializable
+                    data class NetworkTest(
+                        val name: String,
+                        val rssi: Int,
+                        val password: String,
+                        val security: Security,
+                        val knownClients: List<String>
+                    )
+
+                    val networkToSend = NetworkTest(
+                        name = "Charlie network",
+                        rssi = 25,
+                        password = "1234567890!!*&^%$#@",
+                        security = Security(
+                            protocol = "WPA3",
+                            strength = 7
+                        ),
+                        knownClients = listOf("pixel-2", "macbook-pro", "raspberry-pi")
+                    )
+
+                    Log.wtf("DetailViewModel", "Sending JSON $networkToSend")
+                    chunkDecoder.writeJSON(
+                        command = WriteJSONTest,
+                        value = networkToSend
+                    )
+                    Log.wtf("DetailViewModel", "JSON written <3")
+                } catch (e: Exception) {
+                    Log.wtf("DetailViewModel", "JSON chunk writing failed: ${e.message}")
                 }
             }
         }.launchIn(viewModelScope)

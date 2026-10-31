@@ -1,7 +1,9 @@
 package com.emenjivar.simplebleclient.ble
 
 import com.emenjivar.simplebleclient.ble.commands.BleCommand
+import com.emenjivar.simplebleclient.ble.commands.json.JSONChunk
 import com.emenjivar.simplebleclient.ble.commands.json.ResetChunkParams
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class ChunkJsonDecoder(
@@ -18,6 +20,38 @@ class ChunkJsonDecoder(
             command = command,
             value = ResetChunkParams(chunkSize = getUsableBytesPerChunk(), offset = offset)
         )
+    }
+
+    internal suspend inline fun <reified T> writeJSON(
+        command: BleCommand.WriteJSON,
+        value: T
+    ) {
+        // Catch this exception later
+        val jsonToWrite = Json.encodeToString(value)
+        val chunkSize = getUsableBytesPerChunk()
+
+        // Size of bytes instead of size of the string
+        val totalSize = jsonToWrite.toByteArray(Charsets.UTF_8).size
+
+        // Chunk the byte array instead of chunking the string
+        val chunksToWrite = jsonToWrite
+            .toByteArray(Charsets.UTF_8)
+            .toList().chunked(chunkSize)
+
+        var offset = 0
+
+        chunksToWrite.forEach { chunk ->
+            bleManager.write(
+                command = command,
+                value = JSONChunk(
+                    currentOffset = offset,
+                    totalSize = totalSize,
+                    content = chunk
+                )
+            )
+
+            offset += chunkSize
+        }
     }
 
     /**
