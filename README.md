@@ -51,12 +51,11 @@ pip install bluezero
 
 ### Running the server
 
-```bash
-source ~/venv_bluetooth/bin/activate
-python3 gatt_server.py
-```
+Using the venv's Python directly (no need to `activate`/`deactivate`):
 
-To exit the virtual environment, run `deactivate`.
+```bash
+~/venv_bluetooth/bin/python3 ~/Desktop/gatt_server/server.py
+```
 
 ### Checking the server is running
 
@@ -71,7 +70,7 @@ Look for `active (running)`. To see its output, run `journalctl -u gatt_server.s
 If you started it manually, run:
 
 ```bash
-pgrep -af gatt_server.py
+pgrep -af server.py
 ```
 
 It prints the process if the server is running.
