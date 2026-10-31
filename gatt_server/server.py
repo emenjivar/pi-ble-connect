@@ -3,18 +3,7 @@ from gpiozero import LED
 import json
 import struct
 import subprocess
-
-## UUIDS
-SERVICE_UUID            = '290edf15-b540-4e83-83cf-ba647bf4df20'
-CHARACTERISTIC_UUID     = '290edf15-b540-4e83-83cf-ba647bf4df21'
-GET_IP_UUID   = '290edf15-b540-4e83-83cf-ba647bf4df22'
-GET_SSID_UUID = '290edf15-b540-4e83-83cf-ba647bf4df23'
-# The write is persisted now, so a later read returns the written bytes.
-TEST_UUID = '290edf15-b540-4e83-83cf-ba647bf4df24'
-
-# JSON-chunk transport service
-JSON_CHUNK_SERVICE_UUID = '290edf15-b540-4e83-83cf-ba647bf4df30'
-JSON_CHUNK_DATA_UUID    = '290edf15-b540-4e83-83cf-ba647bf4df32'
+from UUIDS import *
 
 # Value to expose
 LED_OFF = 0x00
@@ -31,72 +20,7 @@ JSON_CHUNK_DATA = json.dumps({
         {"ssid": "CoffeeShop", "rssi": -67, "secure": False},
         {"ssid": "Neighbor5G", "rssi": -78, "secure": True},
         {"ssid": "NETGEAR42", "rssi": -52, "secure": True},
-        {"ssid": "xfinitywifi", "rssi": -71, "secure": False},
-        {"ssid": "TP-Link_8A3F", "rssi": -60, "secure": True},
-        {"ssid": "Linksys00217", "rssi": -83, "secure": True},
-        {"ssid": "AndroidAP_7731", "rssi": -39, "secure": True},
-        {"ssid": "iPhone de Marta", "rssi": -48, "secure": True},
-        {"ssid": "Airport Free WiFi", "rssi": -88, "secure": False},
-        {"ssid": "ABCDEFGHIJKLMNOPQRSTUVWXYZ012345", "rssi": -74, "secure": True},
-        {"ssid": "", "rssi": -80, "secure": True},
-        {"ssid": "Café☕Wi-Fi", "rssi": -65, "secure": False},
-        {"ssid": "Quote\"And\\Slash", "rssi": -69, "secure": True},
-        {"ssid": "Guest {Network} [2.4]", "rssi": -57, "secure": False},
-        {"ssid": "HomeNetwork", "rssi": -91, "secure": True},
-        {"ssid": "FBI Surveillance Van", "rssi": -30, "secure": True},
-        {"ssid": "DIRECT-4F-HP OfficeJet", "rssi": -99, "secure": False},
-
-        # 50 new
-        {"ssid": "ASUS_RT-AX88U", "rssi": -44, "secure": True},
-        {"ssid": "ASUS_RT-AX88U_5G", "rssi": -47, "secure": True},
-        {"ssid": "Vodafone-A1B2C3", "rssi": -62, "secure": True},
-        {"ssid": "MOVISTAR_9F21", "rssi": -73, "secure": True},
-        {"ssid": "Telekom_FON", "rssi": -81, "secure": False},
-        {"ssid": "eduroam", "rssi": -58, "secure": True},
-        {"ssid": "Starbucks WiFi", "rssi": -66, "secure": False},
-        {"ssid": "McDonalds Free WiFi", "rssi": -79, "secure": False},
-        {"ssid": "Hotel_Guest_Floor3", "rssi": -55, "secure": False},
-        {"ssid": "Hotel_Staff", "rssi": -70, "secure": True},
-        {"ssid": "Office-Corp", "rssi": -41, "secure": True},
-        {"ssid": "Office-Guest", "rssi": -43, "secure": False},
-        {"ssid": "Office-IoT", "rssi": -50, "secure": True},
-        {"ssid": "Printer_Lab_2", "rssi": -86, "secure": True},
-        {"ssid": "SmartTV-Samsung", "rssi": -63, "secure": True},
-        {"ssid": "Chromecast0451", "rssi": -59, "secure": True},
-        {"ssid": "Ring Setup 7B", "rssi": -77, "secure": False},
-        {"ssid": "ESP_3C71BF", "rssi": -84, "secure": False},
-        {"ssid": "Tesla Service", "rssi": -90, "secure": True},
-        {"ssid": "GoPro_Hero12", "rssi": -36, "secure": True},
-        {"ssid": "Galaxy S24 Ultra 9a2c", "rssi": -42, "secure": True},
-        {"ssid": "Pixel_8053", "rssi": -46, "secure": True},
-        {"ssid": "Library Public", "rssi": -72, "secure": False},
-        {"ssid": "Train_WiFi_Coach4", "rssi": -68, "secure": False},
-        {"ssid": "Gym-Members", "rssi": -75, "secure": True},
-        {"ssid": "Pretty Fly for a WiFi", "rssi": -53, "secure": True},
-        {"ssid": "Bill Wi the Science Fi", "rssi": -61, "secure": True},
-        {"ssid": "LAN Solo", "rssi": -82, "secure": True},
-        {"ssid": "Get Off My LAN", "rssi": -87, "secure": True},
-        {"ssid": "Wu-Tang LAN", "rssi": -64, "secure": True},
-        {"ssid": "Ñandú_Red", "rssi": -56, "secure": True},
-        {"ssid": "Casa_São_João", "rssi": -69, "secure": True},
-        {"ssid": "Wohnung_Müller", "rssi": -76, "secure": True},
-        {"ssid": "Сеть_Дом", "rssi": -80, "secure": True},
-        {"ssid": "家庭网络", "rssi": -85, "secure": True},
-        {"ssid": "ホームWiFi", "rssi": -89, "secure": True},
-        {"ssid": "🏠📶Home", "rssi": -54, "secure": True},
-        {"ssid": "Tab\tIn\tName", "rssi": -71, "secure": True},
-        {"ssid": "New\nLine", "rssi": -93, "secure": False},
-        {"ssid": " LeadingSpace", "rssi": -66, "secure": True},
-        {"ssid": "TrailingSpace ", "rssi": -67, "secure": True},
-        {"ssid": "comma,colon:semi;", "rssi": -60, "secure": False},
-        {"ssid": "null", "rssi": -74, "secure": True},
-        {"ssid": "true", "rssi": -75, "secure": False},
-        {"ssid": "12345", "rssi": -83, "secure": True},
-        {"ssid": "x", "rssi": -95, "secure": False},
-        {"ssid": "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ", "rssi": -78, "secure": True},
-        {"ssid": "Neighbor5G", "rssi": -97, "secure": True},
-        {"ssid": "WeakSignalEdge", "rssi": -100, "secure": False},
-        {"ssid": "RightNextToMe", "rssi": -20, "secure": True},
+        {"ssid": "xfinitywifi", "rssi": -71, "secure": False}
     ]
 }).encode('utf-8')
 
@@ -201,6 +125,30 @@ def read_json_chunk():
     print(f"[READ] JSON chunk: offset={offset}, total={total_size}, content_len={len(content)}")
     return list(response)
 
+write_buffer = bytearray()
+def write_json_chunk(value, options):
+    """Receives JSON chunks: 2 bytes offset + 2 bytes total size + content, little-endian"""
+    global write_buffer
+    byte_val = bytes(value)
+
+    if len(byte_val) < 4:
+        raise ValueError(f"[ERROR] Expected 4 bytes (chunk size + offset), got {len(byte_val)}")
+
+    # I is a 4-byte unsigned int
+    # H is a 2-byte unsigned short
+    offset, json_total_size = struct.unpack('<HH', byte_val[:4])
+    content = byte_val[4:]
+
+    if offset == 0:
+        write_buffer = bytearray() # resets buffer
+
+    write_buffer.extend(content)
+    print(f"[WRITE] JSON chunk: offset={offset}, total={json_total_size}, content={content}")
+
+    if offset + len(content) == json_total_size:
+        json_str = write_buffer.decode('utf-8')
+        print(f"[WRITE] JSON complete: {json_str}")
+
 def main():
     global char_obj
 
@@ -282,6 +230,16 @@ def main():
         read_callback = read_json_chunk,
         write_callback = write_json_chunk_reset,
         notify_callback = None
+    )
+
+    app.add_characteristic(
+        srv_id = 2,
+        chr_id = 2,
+        uuid = WRITE_CHUNK_DATA_UUID,
+        value = [],
+        notifying = False,
+        flags = ['write'],
+        write_callback = write_json_chunk,
     )
 
     char_obj = app.characteristics[0]
