@@ -8,6 +8,7 @@ import com.emenjivar.simplebleclient.ble.BleScanner
 import com.emenjivar.simplebleclient.ble.BleScannerImp
 import com.emenjivar.simplebleclient.ble.BleClient
 import com.emenjivar.simplebleclient.ble.RaspberryBleClient
+import com.emenjivar.simplebleclient.ble.json.ChunkJsonDecoder
 import com.emenjivar.simplebleclient.ble.mock.MockBleDataSource
 import com.emenjivar.simplebleclient.ble.mock.MockBleClient
 import dagger.Module
@@ -56,4 +57,8 @@ object BleClientModule {
             mockBleDataSource = mockBleDataSource
         )
     }
+
+    @Provides
+    @Singleton
+    fun providesChuckJsonDecoder(bleClient: BleClient) = ChunkJsonDecoder(bleManager = bleClient)
 }

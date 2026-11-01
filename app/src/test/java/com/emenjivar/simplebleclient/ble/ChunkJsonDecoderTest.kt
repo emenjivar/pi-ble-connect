@@ -4,6 +4,7 @@ import com.emenjivar.simplebleclient.ble.commands.json.JSONChunk
 import com.emenjivar.simplebleclient.ble.commands.json.ReadDataEmission
 import com.emenjivar.simplebleclient.ble.commands.json.ResetChunkParams
 import com.emenjivar.simplebleclient.ble.commands.json.ResetDataEmission
+import com.emenjivar.simplebleclient.ble.json.ChunkJsonDecoder
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException

@@ -12,7 +12,7 @@ import androidx.lifecycle.viewModelScope
 import com.emenjivar.simplebleclient.ble.model.BleConnectionState
 import com.emenjivar.simplebleclient.ble.model.BluetoothDeviceModel
 import com.emenjivar.simplebleclient.ble.BleClient
-import com.emenjivar.simplebleclient.ble.ChunkJsonDecoder
+import com.emenjivar.simplebleclient.ble.json.ChunkJsonDecoder
 import com.emenjivar.simplebleclient.ble.commands.GetIPAddress
 import com.emenjivar.simplebleclient.ble.commands.GetSSID
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
@@ -40,6 +40,7 @@ import kotlinx.serialization.Serializable
 class DetailViewModel @AssistedInject constructor(
     @ApplicationContext private val context: Context,
     private val bleClient: BleClient,
+    private val chunkJsonDecoder: ChunkJsonDecoder,
     @Assisted private val route: DetailRoute,
 ) : ViewModel() {
 
@@ -78,7 +79,6 @@ class DetailViewModel @AssistedInject constructor(
 
                 // Based on MTU negotiation
 //                val usableBytes = bleClient.getUsableBytes()
-
 //                val maxMtuPayload = "a".repeat(usableBytes)
 //                try {
 //                    bleClient.write(WriteTest, maxMtuPayload)
@@ -92,10 +92,8 @@ class DetailViewModel @AssistedInject constructor(
 //                }
 
                 // DEBUG ONLY: verifies the JSON-chunk protocol against gatt_server.py. Discard once confirmed.
-                val chunkDecoder = ChunkJsonDecoder(bleClient)
                 try {
-
-                    val wifiScan = chunkDecoder.fetchJSON<DebugWifiScanResponse>(
+                    val wifiScan = chunkJsonDecoder.fetchJSON<DebugWifiScanResponse>(
                         readCommand = ReadDataEmission,
                         resetCommand = ResetDataEmission
                     )
@@ -133,7 +131,7 @@ class DetailViewModel @AssistedInject constructor(
                     )
 
                     Log.wtf("DetailViewModel", "Sending JSON $networkToSend")
-                    chunkDecoder.writeJSON(
+                    chunkJsonDecoder.writeJSON(
                         command = WriteJSONTest,
                         value = networkToSend
                     )

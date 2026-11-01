@@ -1,5 +1,7 @@
-package com.emenjivar.simplebleclient.ble
+package com.emenjivar.simplebleclient.ble.json
 
+import android.util.Log
+import com.emenjivar.simplebleclient.ble.BleClient
 import com.emenjivar.simplebleclient.ble.commands.BleCommand
 import com.emenjivar.simplebleclient.ble.commands.json.JSONChunk
 import com.emenjivar.simplebleclient.ble.commands.json.ResetChunkParams
@@ -41,6 +43,7 @@ class ChunkJsonDecoder(
         var offset = 0
 
         chunksToWrite.forEach { chunk ->
+            Log.d("ChunkJsonDecoder", "writing JSON: { offset : $offset, totalSize: $totalSize, content: $chunk }")
             bleManager.write(
                 command = command,
                 value = JSONChunk(
