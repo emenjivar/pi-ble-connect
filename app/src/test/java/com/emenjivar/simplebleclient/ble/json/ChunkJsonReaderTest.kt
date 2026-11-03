@@ -1,5 +1,6 @@
-package com.emenjivar.simplebleclient.ble
+package com.emenjivar.simplebleclient.ble.json
 
+import com.emenjivar.simplebleclient.ble.BleClient
 import com.emenjivar.simplebleclient.ble.commands.json.JSONChunk
 import com.emenjivar.simplebleclient.ble.commands.json.ReadDataEmission
 import com.emenjivar.simplebleclient.ble.commands.json.ResetChunkParams
@@ -15,18 +16,22 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
-class ChunkJsonDecoderTest {
+class ChunkJsonReaderTest {
 
     @Test
     fun `resetOffset should write the usable chunk size and offset to RequestDataEmission`() = runTest {
         val mtuSize = 120
         val bleManager = mock<BleClient>()
         whenever(bleManager.getMTU()).thenReturn(mtuSize)
-        val chunkJsonDecoder = ChunkJsonDecoder(bleManager)
+        val chunkSizeCalculator = ChunkSizeCalculatorImp(bleClient = bleManager)
+        val chunkJsonReader = ChunkJsonReader(
+            bleClient = bleManager,
+            chunkSizeCalculator = chunkSizeCalculator
+        )
 
-        chunkJsonDecoder.resetOffset(ResetDataEmission, offset = 0)
+        chunkJsonReader.resetOffset(ResetDataEmission, offset = 0)
 
-        val expectedChunkSize = chunkJsonDecoder.getUsableBytesPerChunk()
+        val expectedChunkSize = chunkSizeCalculator.getUsableBytesPerChunk()
         verify(bleManager)
             .write(
                 command = ResetDataEmission,
@@ -39,11 +44,15 @@ class ChunkJsonDecoderTest {
         val mtuSize = 120
         val bleManager = mock<BleClient>()
         whenever(bleManager.getMTU()).thenReturn(mtuSize)
-        val chunkJsonDecoder = ChunkJsonDecoder(bleManager)
+        val chunkSizeCalculator = ChunkSizeCalculatorImp(bleClient = bleManager)
+        val chunkJsonReader = ChunkJsonReader(
+            bleClient = bleManager,
+            chunkSizeCalculator = chunkSizeCalculator
+        )
 
-        chunkJsonDecoder.resetOffset(ResetDataEmission, offset = 300)
+        chunkJsonReader.resetOffset(ResetDataEmission, offset = 300)
 
-        val expectedChunkSize = chunkJsonDecoder.getUsableBytesPerChunk()
+        val expectedChunkSize = chunkSizeCalculator.getUsableBytesPerChunk()
         verify(bleManager)
             .write(
                 command = ResetDataEmission,
@@ -66,51 +75,32 @@ class ChunkJsonDecoderTest {
                 content = emptyList()
             )
         )
-        val chunkJsonDecoder = ChunkJsonDecoder(bleManager)
+        val chunkSizeCalculator = ChunkSizeCalculatorImp(bleClient = bleManager)
+        val chunkJsonReader = ChunkJsonReader(
+            bleClient = bleManager,
+            chunkSizeCalculator = chunkSizeCalculator
+        )
 
         // Call it twice, to prove the reset happens on every call, not just the first
         runCatching {
-            chunkJsonDecoder.fetchJSON<Any>(
+            chunkJsonReader.read<Any>(
                 readCommand = ReadDataEmission,
                 resetCommand = ResetDataEmission
             )
         }
-        runCatching { chunkJsonDecoder.fetchJSON<Any>(
-            readCommand = ReadDataEmission,
-            resetCommand = ResetDataEmission
+        runCatching {
+            chunkJsonReader.read<Any>(
+                readCommand = ReadDataEmission,
+                resetCommand = ResetDataEmission
             )
         }
 
-        val expectedChunkSize = chunkJsonDecoder.getUsableBytesPerChunk()
+        val expectedChunkSize = chunkSizeCalculator.getUsableBytesPerChunk()
         verify(bleManager, times(2))
             .write(
                 command = ResetDataEmission,
                 value = ResetChunkParams(chunkSize = expectedChunkSize, offset = 0)
             )
-    }
-
-    @Test
-    fun `getUsableBytesPerChunk should subtract ATT and chuck headers from MTU`() = runTest {
-        val bleManager = mock<BleClient>()
-        whenever(bleManager.getMTU()).thenReturn(120)
-        val chunkJsonDecoder = ChunkJsonDecoder(bleManager)
-
-        val result = chunkJsonDecoder.getUsableBytesPerChunk()
-        assertEquals(113, result) // 120 - 3 (ATT header) - 4 (chunk header)
-    }
-
-    @Test
-    fun `getUsableBytesPerChunk should cap the chunk size at the 512-byte attribute value limit`() = runTest {
-        val bleManager = mock<BleClient>()
-        whenever(bleManager.getMTU()).thenReturn(517) // max MTU
-
-        val chunkJsonDecoder = ChunkJsonDecoder(bleManager)
-
-        val result = chunkJsonDecoder.getUsableBytesPerChunk()
-        // Naively would be 517 - 3 - 4 = 510, but header(4) + content(510) = 514 bytes
-        // exceeds the Bluetooth Core Spec's 512-byte attribute value cap, so it must be
-        // clamped to 512 - 4 = 508.
-        assertEquals(508, result)
     }
 
     @Test
@@ -127,9 +117,12 @@ class ChunkJsonDecoderTest {
             whenever(bleManager.read(ReadDataEmission))
                 .thenAnswer { chunkIterator.next() }
 
-            val chunkJsonDecoder = ChunkJsonDecoder(bleManager)
+            val chunkJsonReader = ChunkJsonReader(
+                bleClient = bleManager,
+                chunkSizeCalculator = ChunkSizeCalculatorImp(bleClient = bleManager)
+            )
 
-            val result = chunkJsonDecoder.fetchJSON<TestJSON>(
+            val result = chunkJsonReader.read<TestJSON>(
                 readCommand = ReadDataEmission,
                 resetCommand = ResetDataEmission
             )
@@ -203,9 +196,12 @@ class ChunkJsonDecoderTest {
         whenever(bleManager.read(ReadDataEmission))
             .thenAnswer { iterator.next() }
 
-        val chunkJsonDecoder = ChunkJsonDecoder(bleManager = bleManager)
+        val chunkJsonReader = ChunkJsonReader(
+            bleClient = bleManager,
+            chunkSizeCalculator = ChunkSizeCalculatorImp(bleClient = bleManager)
+        )
 
-        val result = chunkJsonDecoder.fetchJSON<StatusSnapshot>(
+        val result = chunkJsonReader.read<StatusSnapshot>(
             readCommand = ReadDataEmission,
             resetCommand = ResetDataEmission
         )
@@ -264,10 +260,13 @@ class ChunkJsonDecoderTest {
             whenever(bleManager.read(ReadDataEmission))
                 .thenAnswer { chunkIterator.next() }
 
-            val chunkJsonDecoder = ChunkJsonDecoder(bleManager)
+            val chunkJsonReader = ChunkJsonReader(
+                bleClient = bleManager,
+                chunkSizeCalculator = ChunkSizeCalculatorImp(bleClient = bleManager)
+            )
 
             val result = runCatching {
-                chunkJsonDecoder.fetchJSON<TestJSON>(
+                chunkJsonReader.read<TestJSON>(
                     readCommand = ReadDataEmission,
                     resetCommand = ResetDataEmission
                 )

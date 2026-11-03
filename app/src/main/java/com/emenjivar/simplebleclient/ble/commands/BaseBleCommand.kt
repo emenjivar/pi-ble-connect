@@ -16,6 +16,7 @@ val testCharacteristicUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba64
 // JSON-related characteristics
 val dataEmissionUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df32")
 val verifyIntegrityUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df33")
+val writeJSONTestUUID: UUID = UUID.fromString("290edf15-b540-4e83-83cf-ba647bf4df34")
 
 // Used for listening notification changes
 val clientCharacteristicConfigUUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
@@ -112,6 +113,25 @@ sealed class BleCommand<T> {
                 totalSize = buffer.getShort().toInt() and 0xFFFF,
                 content = bytes.copyOfRange(fromIndex = 4, toIndex = bytes.size).toList()
             )
+        }
+    }
+
+    /**
+     */
+    abstract class WriteJSON(
+        service: UUID,
+        characteristic: UUID
+    ): Write<JSONChunk>(service, characteristic) {
+        override fun encode(value: JSONChunk): ByteArray {
+            val bytes = ByteBuffer.allocate(4)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                // using short covers 0-65535 bytes,
+                // using +64KB requires an int so the allocation is increased
+                .putShort(value.currentOffset.toShort())
+                .putShort(value.totalSize.toShort())
+                .array()
+
+            return bytes + value.content.toByteArray()
         }
     }
 }

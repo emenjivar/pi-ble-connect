@@ -8,6 +8,10 @@ import com.emenjivar.simplebleclient.ble.BleScanner
 import com.emenjivar.simplebleclient.ble.BleScannerImp
 import com.emenjivar.simplebleclient.ble.BleClient
 import com.emenjivar.simplebleclient.ble.RaspberryBleClient
+import com.emenjivar.simplebleclient.ble.json.ChunkJsonReader
+import com.emenjivar.simplebleclient.ble.json.ChunkJsonWriter
+import com.emenjivar.simplebleclient.ble.json.ChunkSizeCalculatorImp
+import com.emenjivar.simplebleclient.ble.json.ChunkSizeCalculator
 import com.emenjivar.simplebleclient.ble.mock.MockBleDataSource
 import com.emenjivar.simplebleclient.ble.mock.MockBleClient
 import dagger.Module
@@ -56,4 +60,30 @@ object BleClientModule {
             mockBleDataSource = mockBleDataSource
         )
     }
+
+    @Provides
+    @Singleton
+    fun providesChunkSizeCalculator(
+        bleClient: BleClient
+    ): ChunkSizeCalculator = ChunkSizeCalculatorImp(bleClient = bleClient)
+
+    @Provides
+    @Singleton
+    fun providesChunkJsonWriter(
+        bleClient: BleClient,
+        chunkSizeCalculator: ChunkSizeCalculator
+    ): ChunkJsonWriter = ChunkJsonWriter(
+        bleClient = bleClient,
+        chunkSizeCalculator = chunkSizeCalculator
+    )
+
+    @Provides
+    @Singleton
+    fun providesChunkJsonReader(
+        bleClient: BleClient,
+        chunkSizeCalculator: ChunkSizeCalculator
+    ): ChunkJsonReader = ChunkJsonReader(
+        bleClient = bleClient,
+        chunkSizeCalculator = chunkSizeCalculator
+    )
 }
