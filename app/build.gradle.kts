@@ -55,6 +55,12 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // Local unit tests run on the plain JVM with no real Android framework. Without this,
+    // any unmocked framework call (e.g. android.util.Log) throws instead of being a no-op.
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -93,4 +99,5 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    testImplementation(kotlin("test"))
 }

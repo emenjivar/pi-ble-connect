@@ -12,17 +12,17 @@ import androidx.lifecycle.viewModelScope
 import com.emenjivar.simplebleclient.ble.model.BleConnectionState
 import com.emenjivar.simplebleclient.ble.model.BluetoothDeviceModel
 import com.emenjivar.simplebleclient.ble.BleClient
-import com.emenjivar.simplebleclient.ble.json.ChunkJsonDecoder
 import com.emenjivar.simplebleclient.ble.commands.GetIPAddress
 import com.emenjivar.simplebleclient.ble.commands.GetSSID
 import com.emenjivar.simplebleclient.ble.commands.LEDCommand
 import com.emenjivar.simplebleclient.ble.commands.ReadLedStatus
 import com.emenjivar.simplebleclient.ble.commands.ReadTest
 import com.emenjivar.simplebleclient.ble.commands.WriteLedStatus
-import com.emenjivar.simplebleclient.ble.commands.WriteTest
 import com.emenjivar.simplebleclient.ble.commands.json.ReadDataEmission
 import com.emenjivar.simplebleclient.ble.commands.json.ResetDataEmission
 import com.emenjivar.simplebleclient.ble.commands.json.WriteJSONTest
+import com.emenjivar.simplebleclient.ble.json.ChunkJsonReader
+import com.emenjivar.simplebleclient.ble.json.ChunkJsonWriter
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -40,7 +40,8 @@ import kotlinx.serialization.Serializable
 class DetailViewModel @AssistedInject constructor(
     @ApplicationContext private val context: Context,
     private val bleClient: BleClient,
-    private val chunkJsonDecoder: ChunkJsonDecoder,
+    private val chunkJsonWriter: ChunkJsonWriter,
+    private val chunkJsonReader: ChunkJsonReader,
     @Assisted private val route: DetailRoute,
 ) : ViewModel() {
 
@@ -93,7 +94,7 @@ class DetailViewModel @AssistedInject constructor(
 
                 // DEBUG ONLY: verifies the JSON-chunk protocol against gatt_server.py. Discard once confirmed.
                 try {
-                    val wifiScan = chunkJsonDecoder.fetchJSON<DebugWifiScanResponse>(
+                    val wifiScan = chunkJsonReader.read<DebugWifiScanResponse>(
                         readCommand = ReadDataEmission,
                         resetCommand = ResetDataEmission
                     )
@@ -131,7 +132,7 @@ class DetailViewModel @AssistedInject constructor(
                     )
 
                     Log.wtf("DetailViewModel", "Sending JSON $networkToSend")
-                    chunkJsonDecoder.writeJSON(
+                    chunkJsonWriter.write(
                         command = WriteJSONTest,
                         value = networkToSend
                     )
