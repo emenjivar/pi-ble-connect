@@ -68,7 +68,37 @@ If we set the offset to something equal or greater than **total size**, then we 
 | total size |  | 2100 |
 | content |  |  |
 
+### Write data
+For writing data using JSON as a transfer protocol, we need only one characteristic:
+- write data by chunks -> `write type`
 
+The **write** characteristic uses the following structure:
+
+| Position | Field | Usage |
+| --- | --- | --- |
+| 2 bytes | current offset | Expressed in little-endian, this is the position where this chunk's content start, not the cumulative total after receiving it |
+| 2 bytes | total size of the complete JSON | Expressed in little endian |
+| The rest of the bytes | content | This value is a portion of a complete JSON |
+
+Let's use the following example as a **Transfer simulation** to understand how the data
+**JSON to transfer**
+```json
+{"ssid":"HomeNet","rssi":-45}
+```
+
+Assuming a chunk size of **10 bytes**:
+
+| # | offset/total | content |  |
+| --- | --- | --- | --- |
+| 1 | 0/29 | `{"ssid":"H` |  |
+| 2 | 10/29 | `omeNet","r` |  |
+| 3 | 20/29 | `ssi":-45}` |  |
+Notes on the pattern:
+- First emission's offset is always 0
+- Each subsequent offset = previous offset + len(content)
+- Last emissions'c content is whatever remains, so it's `total_size - offset`
+- The client keeps reading while `current_offset < total_size`
+- Sending an offset of 0 resets the buffer
 
 ### Verify Integrity
 **Write/Read** characteristic `290edf15-b540-4e83-83cf-ba647bf4df33` that is sent after the emission is completed.
