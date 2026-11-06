@@ -49,18 +49,6 @@ source ~/venv_bluetooth/bin/activate
 pip install bluezero colorlog
 ```
 
-If you already have a venv from before `colorlog` was added, install it directly:
-
-```bash
-~/venv_bluetooth/bin/pip install colorlog
-```
-
-If the server runs as a systemd service, restart it afterward:
-
-```bash
-sudo systemctl restart gatt_server.service
-```
-
 ### Running the server
 
 Using the venv's Python directly (no need to `activate`/`deactivate`):
