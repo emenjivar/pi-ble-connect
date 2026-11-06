@@ -46,7 +46,7 @@ sudo apt install libdbus-1-dev -y
 ```bash
 python3 -m venv ~/venv_bluetooth --system-site-packages
 source ~/venv_bluetooth/bin/activate
-pip install bluezero
+pip install bluezero colorlog
 ```
 
 ### Running the server

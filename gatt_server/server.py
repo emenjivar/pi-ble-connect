@@ -1,9 +1,20 @@
 from bluezero import adapter, peripheral
 from gpiozero import LED
+import colorlog
 import json
+import logging
 import struct
 import subprocess
 from UUIDS import *
+
+logger = colorlog.getLogger("gatt_server")
+handler = colorlog.StreamHandler()
+handler.setFormatter(colorlog.ColoredFormatter(
+    "%(asctime)s [%(log_color)s%(levelname)s%(reset)s] %(message)s",
+    datefmt="%H:%M:%S",
+))
+logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)
 
 # Value to expose
 LED_OFF = 0x00
@@ -35,7 +46,7 @@ led = LED(17)
 char_obj = None  # Direct reference to the characteristic
 
 def read_value():
-    print(f"[READ] Characteristic was read: {LED_STATE}")
+    logger.debug(f"Characteristic was read: {LED_STATE}")
     return LED_STATE
 
 def get_ip_address():
@@ -60,9 +71,9 @@ def get_ssid():
 
 def notify_callback(notifying, characteristic):
     if notifying:
-        print("[NOTIFY] Client subscribed to notifications")
+        logger.info("Client subscribed to notifications")
     else:
-        print("[NOTIFY] Client unsubscribed from notifications")
+        logger.info("Client unsubscribed from notifications")
 
 def write_value(value, options):
     global LED_STATE
@@ -70,10 +81,11 @@ def write_value(value, options):
     command = byte_val[0]
 
     if command not in (LED_OFF, LED_ON):
-        raise ValueError(f"[ERROR] Invalid value: {hex(command)}.")
+        logger.error(f"Invalid value: {hex(command)}.")
+        raise ValueError(f"Invalid value: {hex(command)}.")
 
     LED_STATE = [command]
-    print(f"[WRITE] Characteristic was written: {LED_STATE}")
+    logger.info(f"Characteristic was written: {LED_STATE}")
 
     if command == LED_ON:
         led.on()
@@ -85,14 +97,14 @@ def write_value(value, options):
         char_obj.set_value(LED_STATE)
 
 def read_test_value():
-    print(f"[READ] Test value was read: {test_value}")
+    logger.debug(f"Test value was read: {test_value}")
     return test_value
 
 def write_test_value(value, options):
     global test_value
     byte_val = bytes(value)
     test_value = byte_val
-    print(f"[WRITE] Test value was written: {value}, {byte_val}")
+    logger.info(f"Test value was written: {value}, {byte_val}")
 
 def write_json_chunk_reset(value, options):
     """Reset write: 4 bytes chunk size + 4 bytes offset, both little-endian."""
@@ -100,19 +112,21 @@ def write_json_chunk_reset(value, options):
     byte_val = bytes(value)
 
     if len(byte_val) != 8:
-        raise ValueError(f"[ERROR] Expected 8 bytes (chunk size + offset), got {len(byte_val)}")
+        logger.error(f"Expected 8 bytes (chunk size + offset), got {len(byte_val)}")
+        raise ValueError(f"Expected 8 bytes (chunk size + offset), got {len(byte_val)}")
 
     chunk_size, offset = struct.unpack('<II', byte_val)
     json_chunk_size = chunk_size
     json_chunk_offset = offset
-    print(f"[WRITE] JSON chunk reset: chunk_size={chunk_size}, offset={offset}")
+    logger.info(f"JSON chunk reset: chunk_size={chunk_size}, offset={offset}")
 
 def read_json_chunk():
     """Returns the next chunk: 2 bytes current offset + 2 bytes total size + content, all little-endian."""
     global json_chunk_offset
 
     if json_chunk_size <= 0:
-        raise ValueError("[ERROR] Chunk size not set, write chunk size/offset before reading")
+        logger.error("Chunk size not set, write chunk size/offset before reading")
+        raise ValueError("Chunk size not set, write chunk size/offset before reading")
 
     total_size = len(JSON_CHUNK_DATA)
     offset = json_chunk_offset
@@ -122,7 +136,7 @@ def read_json_chunk():
     response = header + content
 
     json_chunk_offset += len(content)
-    print(f"[READ] JSON chunk: offset={offset}, total={total_size}, content_len={len(content)}")
+    logger.debug(f"JSON chunk: offset={offset}, total={total_size}, content_len={len(content)}")
     return list(response)
 
 write_buffer = bytearray()
@@ -132,7 +146,8 @@ def write_json_chunk(value, options):
     byte_val = bytes(value)
 
     if len(byte_val) < 4:
-        raise ValueError(f"[ERROR] Expected 4 bytes (chunk size + offset), got {len(byte_val)}")
+        logger.error(f"Expected 4 bytes (chunk size + offset), got {len(byte_val)}")
+        raise ValueError(f"Expected 4 bytes (chunk size + offset), got {len(byte_val)}")
 
     # I is a 4-byte unsigned int
     # H is a 2-byte unsigned short
@@ -143,18 +158,18 @@ def write_json_chunk(value, options):
         write_buffer = bytearray() # resets buffer
 
     write_buffer.extend(content)
-    print(f"[WRITE] JSON chunk: offset={offset}, total={json_total_size}, content={content}")
+    logger.info(f"JSON chunk: offset={offset}, total={json_total_size}, content={content}")
 
     if offset + len(content) == json_total_size:
         json_str = write_buffer.decode('utf-8')
-        print(f"[WRITE] JSON complete: {json_str}")
+        logger.info(f"JSON complete: {json_str}")
 
 def main():
     global char_obj
 
     dongle = list(adapter.Adapter.available())[0]
     adapter_address = dongle.address
-    print(f"Using adapter: {adapter_address}")
+    logger.info(f"Using adapter: {adapter_address}")
 
     app = peripheral.Peripheral(
         adapter_address = adapter_address,
@@ -253,12 +268,12 @@ def main():
     # excluding it from the advertised UUID list.
     app.primary_services.remove(JSON_CHUNK_SERVICE_UUID)
 
-    print("GATT server starting")
-    print(f"Local name: Charlie gatt server")
-    print(f"Service UUID: {SERVICE_UUID}")
-    print(f"Char UUID:    {CHARACTERISTIC_UUID}")
-    print(f"Value: {LED_STATE}")
-    print("Advertising - waiting for connections (Ctrl+c to stop)")
+    logger.info("GATT server starting")
+    logger.info(f"Local name: Charlie gatt server")
+    logger.info(f"Service UUID: {SERVICE_UUID}")
+    logger.info(f"Char UUID:    {CHARACTERISTIC_UUID}")
+    logger.info(f"Value: {LED_STATE}")
+    logger.info("Advertising - waiting for connections (Ctrl+c to stop)")
     app.publish()
 
 if __name__ == '__main__':
