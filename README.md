@@ -46,7 +46,19 @@ sudo apt install libdbus-1-dev -y
 ```bash
 python3 -m venv ~/venv_bluetooth --system-site-packages
 source ~/venv_bluetooth/bin/activate
-pip install bluezero
+pip install bluezero colorlog
+```
+
+If you already have a venv from before `colorlog` was added, install it directly:
+
+```bash
+~/venv_bluetooth/bin/pip install colorlog
+```
+
+If the server runs as a systemd service, restart it afterward:
+
+```bash
+sudo systemctl restart gatt_server.service
 ```
 
 ### Running the server
